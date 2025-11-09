@@ -83,7 +83,7 @@ class ChannelStream(Base):
     # Original metadata from provider
     original_name = Column(String(500), nullable=True)
     original_category = Column(String(255), nullable=True)
-    metadata = Column(JSON, nullable=True)
+    provider_metadata = Column(JSON, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -43,7 +43,7 @@ class VODMovie(Base):
     last_check = Column(DateTime(timezone=True), nullable=True)
 
     # Metadata
-    metadata = Column(JSON, nullable=True)  # Additional provider metadata
+    provider_metadata = Column(JSON, nullable=True)  # Additional provider metadata
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -90,7 +90,7 @@ class VODSeries(Base):
     season_count = Column(Integer, default=0)
 
     # Metadata
-    metadata = Column(JSON, nullable=True)
+    provider_metadata = Column(JSON, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -134,7 +134,7 @@ class VODEpisode(Base):
     last_check = Column(DateTime(timezone=True), nullable=True)
 
     # Metadata
-    metadata = Column(JSON, nullable=True)
+    provider_metadata = Column(JSON, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
