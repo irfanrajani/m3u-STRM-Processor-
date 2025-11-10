@@ -50,6 +50,13 @@ class Settings(BaseSettings):
     EMBY_API_KEY: Optional[str] = None
     EMBY_LIBRARY_REFRESH: bool = True
 
+    # HDHomeRun Emulation
+    HDHR_PROXY_MODE: str = "direct"  # 'direct' or 'proxy'
+    HDHR_DEVICE_ID: str = "IPTV-MGR"
+    HDHR_TUNER_COUNT: int = 4
+    EXTERNAL_URL: Optional[str] = None  # External URL for HDHR discovery
+    API_PORT: int = 8000
+
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "/app/logs/app.log"

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import init_db, close_db
-from app.api import providers, channels, vod, epg, health, settings as settings_router, auth
+from app.api import providers, channels, vod, epg, health, settings as settings_router, auth, hdhr
 
 # Configure logging
 logging.basicConfig(
@@ -60,6 +60,7 @@ app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
 app.include_router(epg.router, prefix="/api/epg", tags=["epg"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
+app.include_router(hdhr.router, tags=["hdhr"])  # No prefix - HDHomeRun endpoints at root
 
 
 @app.get("/")
