@@ -2,7 +2,7 @@
 import logging
 from sqlalchemy import select
 from app.tasks.celery_app import celery_app
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_session_factory
 from app.core.config import settings
 from app.models.provider import Provider
 from app.services.epg_manager import EPGManager
@@ -19,7 +19,8 @@ def refresh_epg(provider_id: int):
 
 async def _refresh_epg_async(provider_id: int):
     """Async implementation of EPG refresh."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         try:
             # Get provider
             result = await db.execute(select(Provider).where(Provider.id == provider_id))
@@ -55,7 +56,8 @@ def refresh_all_epg():
 
 async def _refresh_all_epg_async():
     """Async implementation of refresh all EPG."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         try:
             result = await db.execute(
                 select(Provider).where(
