@@ -2,6 +2,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+from typing import Optional, AsyncGenerator
 from app.core.config import settings
 
 Base = declarative_base()
@@ -38,7 +39,7 @@ def get_session_factory() -> async_sessionmaker:
     return _session_factory
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency function to get database session.
 

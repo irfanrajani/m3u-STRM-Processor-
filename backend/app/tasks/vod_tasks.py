@@ -2,7 +2,7 @@
 import logging
 from sqlalchemy import select
 from app.tasks.celery_app import celery_app
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_session_factory
 from app.core.config import settings
 from app.models.provider import Provider
 from app.models.vod import VODMovie, VODSeries, VODEpisode
@@ -21,7 +21,8 @@ def sync_vod_content(provider_id: int):
 
 async def _sync_vod_content_async(provider_id: int):
     """Async implementation of VOD sync."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         try:
             # Get provider
             result = await db.execute(select(Provider).where(Provider.id == provider_id))
@@ -238,7 +239,8 @@ def generate_strm_files():
 
 async def _generate_strm_files_async():
     """Async implementation of STRM generation."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         try:
             logger.info("Starting STRM file generation")
 
