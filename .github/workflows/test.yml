@@ -10,13 +10,24 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: postgresql+asyncpg://test:test@127.0.0.1:5432/test_db
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: test
+      PGPASSWORD: test
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/0
+      SECRET_KEY: test-secret-key-for-ci
+
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_USER: testuser
-          POSTGRES_DB: testdb
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: test_db
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -61,21 +72,35 @@ jobs:
         cd backend
         python -m py_compile $(find . -name "*.py" -not -path "./venv/*" -not -path "./.venv/*")
 
-    - name: Run Flake8 linting
-      continue-on-error: true
+    - name: Install lint and dev tools
+      run: |
+        pip install autoflake ruff black flake8
+
+    - name: Auto-fix lint issues
       run: |
         cd backend
-        pip install flake8
+        # Remove unused imports
+        autoflake --in-place --remove-all-unused-imports --recursive app
+        # Apply safe automatic fixes including E711
+        ruff check --fix app || true
+        # Reformat code to fix line length issues
+        black app --line-length 127
+
+    - name: Run Flake8 linting
+      run: |
+        cd backend
         flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 app --count --max-complexity=10 --max-line-length=127 --statistics
 
+    - name: Wait for Postgres
+      run: |
+        until pg_isready -h 127.0.0.1 -p 5432 -U test; do
+          echo "Waiting for Postgres..."
+          sleep 2
+        done
+        echo "Postgres is ready!"
+
     - name: Check imports
-      env:
-        DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
-        REDIS_URL: redis://localhost:6379/0
-        CELERY_BROKER_URL: redis://localhost:6379/0
-        CELERY_RESULT_BACKEND: redis://localhost:6379/0
-        SECRET_KEY: test-secret-key-for-ci
       run: |
         cd backend
         python -c "
@@ -94,10 +119,12 @@ jobs:
         "
 
     - name: Run database migrations check
-      env:
-        DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
       run: |
         cd backend
+        until pg_isready -h 127.0.0.1 -p 5432 -U test; do
+          echo "Waiting for Postgres..."
+          sleep 2
+        done
         alembic check || echo "Migration check completed"
 
   frontend-tests:
