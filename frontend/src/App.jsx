@@ -8,6 +8,7 @@ import Providers from './pages/Providers'
 import Channels from './pages/Channels'
 import VOD from './pages/VOD'
 import Settings from './pages/Settings'
+import SystemInfo from './pages/SystemInfo'
 import Login from './pages/Login'
 
 const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ function App() {
                     <Route path="/channels" element={<Channels />} />
                     <Route path="/vod" element={<VOD />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/system" element={<SystemInfo />} />
                   </Routes>
                 </Layout>
               </ProtectedRoute>

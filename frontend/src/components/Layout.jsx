@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Radio, Tv, Film, Settings, Activity, LogOut, User } from 'lucide-react'
+import { Home, Radio, Tv, Film, Settings, Activity, LogOut, User, Info } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const navigation = [
@@ -8,6 +8,7 @@ const navigation = [
   { name: 'Channels', href: '/channels', icon: Tv },
   { name: 'VOD', href: '/vod', icon: Film },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'System Info', href: '/system', icon: Info },
 ]
 
 export default function Layout({ children }) {
