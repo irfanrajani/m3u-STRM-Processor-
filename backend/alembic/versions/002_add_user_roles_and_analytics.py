@@ -41,6 +41,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_user_favorites_id'), 'user_favorites', ['id'], unique=False)
+    op.create_index(op.f('ix_user_favorites_user_id'), 'user_favorites', ['user_id'], unique=False)
 
     # Create viewing_history table
     op.create_table('viewing_history',
@@ -75,6 +76,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_viewing_history_id'), table_name='viewing_history')
     op.drop_table('viewing_history')
 
+    op.drop_index(op.f('ix_user_favorites_user_id'), table_name='user_favorites')
     op.drop_index(op.f('ix_user_favorites_id'), table_name='user_favorites')
     op.drop_table('user_favorites')
 

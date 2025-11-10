@@ -43,26 +43,32 @@ def upgrade() -> None:
     op.create_table('providers',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
-        sa.Column('type', sa.String(length=50), nullable=False),
+        sa.Column('provider_type', sa.String(length=50), nullable=False),
         sa.Column('enabled', sa.Boolean(), nullable=True),
         sa.Column('priority', sa.Integer(), nullable=True),
 
         # M3U provider fields
         sa.Column('m3u_url', sa.String(length=1000), nullable=True),
-        sa.Column('backup_m3u_urls', postgresql.JSON(astext_type=sa.Text()), nullable=True),
+        sa.Column('m3u_backup_urls', postgresql.JSON(astext_type=sa.Text()), nullable=True),
 
         # Xstream provider fields
-        sa.Column('host', sa.String(length=500), nullable=True),
-        sa.Column('username', sa.String(length=255), nullable=True),
-        sa.Column('password', sa.String(length=255), nullable=True),
-        sa.Column('backup_hosts', postgresql.JSON(astext_type=sa.Text()), nullable=True),
+        sa.Column('xstream_host', sa.String(length=500), nullable=True),
+        sa.Column('xstream_username', sa.String(length=255), nullable=True),
+        sa.Column('xstream_password', sa.String(length=255), nullable=True),
+        sa.Column('xstream_backup_hosts', postgresql.JSON(astext_type=sa.Text()), nullable=True),
 
         # EPG
         sa.Column('epg_url', sa.String(length=1000), nullable=True),
 
+        # Health check settings
+        sa.Column('health_check_enabled', sa.Boolean(), nullable=True),
+        sa.Column('health_check_timeout', sa.Integer(), nullable=True),
+
         # Stats
         sa.Column('total_channels', sa.Integer(), nullable=True),
         sa.Column('active_channels', sa.Integer(), nullable=True),
+        sa.Column('total_vod_movies', sa.Integer(), nullable=True),
+        sa.Column('total_vod_series', sa.Integer(), nullable=True),
         sa.Column('last_sync', sa.DateTime(timezone=True), nullable=True),
         sa.Column('last_health_check', sa.DateTime(timezone=True), nullable=True),
         sa.Column('status', sa.String(length=50), nullable=True),
@@ -75,7 +81,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_providers_name'), 'providers', ['name'], unique=False)
-    op.create_index(op.f('ix_providers_type'), 'providers', ['type'], unique=False)
+    op.create_index(op.f('ix_providers_provider_type'), 'providers', ['provider_type'], unique=False)
 
     # Create channels table
     op.create_table('channels',
@@ -206,6 +212,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['provider_id'], ['providers.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_vod_movies_provider_id'), 'vod_movies', ['provider_id'], unique=False)
     op.create_index(op.f('ix_vod_movies_title'), 'vod_movies', ['title'], unique=False)
     op.create_index(op.f('ix_vod_movies_normalized_title'), 'vod_movies', ['normalized_title'], unique=False)
     op.create_index(op.f('ix_vod_movies_year'), 'vod_movies', ['year'], unique=False)
@@ -253,6 +260,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['provider_id'], ['providers.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_vod_series_provider_id'), 'vod_series', ['provider_id'], unique=False)
     op.create_index(op.f('ix_vod_series_title'), 'vod_series', ['title'], unique=False)
     op.create_index(op.f('ix_vod_series_normalized_title'), 'vod_series', ['normalized_title'], unique=False)
     op.create_index(op.f('ix_vod_series_year'), 'vod_series', ['year'], unique=False)
@@ -355,6 +363,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_vod_series_year'), table_name='vod_series')
     op.drop_index(op.f('ix_vod_series_normalized_title'), table_name='vod_series')
     op.drop_index(op.f('ix_vod_series_title'), table_name='vod_series')
+    op.drop_index(op.f('ix_vod_series_provider_id'), table_name='vod_series')
     op.drop_table('vod_series')
 
     op.drop_index(op.f('ix_vod_movies_imdb_id'), table_name='vod_movies')
@@ -363,6 +372,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_vod_movies_year'), table_name='vod_movies')
     op.drop_index(op.f('ix_vod_movies_normalized_title'), table_name='vod_movies')
     op.drop_index(op.f('ix_vod_movies_title'), table_name='vod_movies')
+    op.drop_index(op.f('ix_vod_movies_provider_id'), table_name='vod_movies')
     op.drop_table('vod_movies')
 
     op.drop_index(op.f('ix_channel_streams_provider_id'), table_name='channel_streams')
@@ -375,7 +385,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_channels_name'), table_name='channels')
     op.drop_table('channels')
 
-    op.drop_index(op.f('ix_providers_type'), table_name='providers')
+    op.drop_index(op.f('ix_providers_provider_type'), table_name='providers')
     op.drop_index(op.f('ix_providers_name'), table_name='providers')
     op.drop_table('providers')
 

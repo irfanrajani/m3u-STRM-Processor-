@@ -217,14 +217,17 @@ class VODManager:
         Returns:
             Number of files removed
         """
-        removed_count = 0
-
-        # This would need to track which .strm files correspond to which IDs
-        # For now, we'll leave this as a placeholder
-        # In production, you'd maintain a mapping database
-
-        logger.info(f"Cleanup removed {removed_count} orphaned files")
-        return removed_count
+        # NOTE: This feature is not yet implemented to avoid accidental data loss.
+        # To implement safely, you would need to:
+        # 1. Query database for all active strm_file_path values
+        # 2. Compare against filesystem
+        # 3. Remove files not in database
+        # 4. Add dry-run mode for testing
+        raise NotImplementedError(
+            "Orphaned file cleanup is not yet implemented. "
+            "Manually delete the output/strm_files directory to clean all files, "
+            "then regenerate STRM files."
+        )
 
     def get_stats(self) -> Dict:
         """
