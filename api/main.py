@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import requests
-import os
 import logging
 from pathlib import Path
 
@@ -16,10 +15,10 @@ app = FastAPI()
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class M3URequest(BaseModel):
@@ -71,10 +70,9 @@ def create_strm_files(playlist, output_path):
         except OSError as exc:
             logger.error("Could not write %s: %s", filename, exc)
 
-
 @app.post("/process-m3u/")
 async def process_m3u(request: M3URequest):
-    logger.info(f"Processing M3U from URL: {request.m3u_url}")
+    logger.info("Processing M3U from URL: %s", request.m3u_url)
     try:
         response = requests.get(request.m3u_url, timeout=30)
         response.raise_for_status()
@@ -93,6 +91,5 @@ async def process_m3u(request: M3URequest):
         logger.error("An unexpected error occurred: %s", exc)
         raise HTTPException(status_code=500, detail=f"An error occurred: {exc}")
 
-# Mount the static files directory for the frontend
-# This must be after all API routes
+# Mount static files - must be after all API routes
 app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
