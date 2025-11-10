@@ -262,7 +262,11 @@ class ChannelMatcher:
         """
         # Check cache
         if url in self.logo_cache:
-            return imagehash.hex_to_hash(self.logo_cache[url])
+            try:
+                return imagehash.hex_to_hash(self.logo_cache[url])
+            except (ValueError, TypeError) as e:
+                logger.debug(f"Invalid cached hash for {url}: {e}")
+                del self.logo_cache[url]  # Remove invalid cache entry
 
         try:
             async with httpx.AsyncClient(timeout=10) as client:

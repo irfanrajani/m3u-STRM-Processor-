@@ -9,6 +9,8 @@ import Channels from './pages/Channels'
 import VOD from './pages/VOD'
 import Settings from './pages/Settings'
 import SystemInfo from './pages/SystemInfo'
+import Users from './pages/Users'
+import Analytics from './pages/Analytics'
 import Login from './pages/Login'
 
 const queryClient = new QueryClient({
@@ -37,6 +39,8 @@ function App() {
                     <Route path="/vod" element={<VOD />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/system" element={<SystemInfo />} />
+                    <Route path="/users" element={<Users />} />
+                    <Route path="/analytics" element={<Analytics />} />
                   </Routes>
                 </Layout>
               </ProtectedRoute>

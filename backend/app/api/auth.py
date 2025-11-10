@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.auth import get_current_user, get_optional_user
-from app.models.user import User
+from app.models.user import User, UserRole
 
 router = APIRouter()
 
@@ -35,6 +35,7 @@ class UserResponse(BaseModel):
     username: str
     email: str | None
     full_name: str | None
+    role: UserRole
     is_active: bool
     is_superuser: bool
     created_at: datetime
@@ -84,6 +85,7 @@ async def login(
             "username": user.username,
             "email": user.email,
             "full_name": user.full_name,
+            "role": user.role,
             "is_superuser": user.is_superuser
         }
     }
@@ -142,6 +144,7 @@ async def register(
         full_name=user_data.full_name,
         hashed_password=get_password_hash(user_data.password),
         is_superuser=is_first_user,  # First user is superuser
+        role=UserRole.ADMIN if is_first_user else UserRole.VIEWER,
         is_active=True
     )
 

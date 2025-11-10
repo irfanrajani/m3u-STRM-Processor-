@@ -37,9 +37,9 @@ async def get_health_status(db: AsyncSession = Depends(get_db)):
 
     # Get last check time from most recent stream update
     last_check_result = await db.execute(
-        select(ChannelStream.last_checked)
-        .where(ChannelStream.last_checked.isnot(None))
-        .order_by(ChannelStream.last_checked.desc())
+        select(ChannelStream.last_check)
+        .where(ChannelStream.last_check.isnot(None))
+        .order_by(ChannelStream.last_check.desc())
         .limit(1)
     )
     last_check_row = last_check_result.first()

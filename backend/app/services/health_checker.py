@@ -178,7 +178,8 @@ class StreamHealthChecker:
             async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
                 response = await client.head(stream_url, follow_redirects=True)
                 return response.status_code in [200, 206, 302, 301]
-        except:
+        except Exception as e:
+            logger.debug(f"Quick check failed for {stream_url}: {str(e)}")
             return False
 
     def calculate_health_score(self, consecutive_failures: int,

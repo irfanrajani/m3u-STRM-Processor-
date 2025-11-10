@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Radio, Tv, Film, Settings, Activity, LogOut, User, Info } from 'lucide-react'
+import { Home, Radio, Tv, Film, Settings, Activity, LogOut, User, Info, Users, BarChart3 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const navigation = [
@@ -7,14 +7,19 @@ const navigation = [
   { name: 'Providers', href: '/providers', icon: Radio },
   { name: 'Channels', href: '/channels', icon: Tv },
   { name: 'VOD', href: '/vod', icon: Film },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'System Info', href: '/system', icon: Info },
+  { name: 'Users', href: '/users', icon: Users, adminOnly: true },
 ]
 
 export default function Layout({ children }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
+
+  // Filter navigation items based on user role
+  const visibleNavigation = navigation.filter(item => !item.adminOnly || isAdmin)
 
   const handleLogout = () => {
     logout()
@@ -34,7 +39,7 @@ export default function Layout({ children }) {
                 </span>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                {navigation.map((item) => {
+                {visibleNavigation.map((item) => {
                   const Icon = item.icon
                   const isActive = location.pathname === item.href
                   return (

@@ -1,5 +1,6 @@
 """Settings API endpoints."""
 import json
+import logging
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +10,8 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.models.settings import AppSettings
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -264,7 +267,8 @@ async def list_all_settings(
     for setting in settings:
         try:
             value = json.loads(setting.value) if setting.value else None
-        except:
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.warning(f"Failed to parse setting {setting.key}: {e}")
             value = setting.value
 
         settings_dict[setting.key] = {
@@ -294,7 +298,8 @@ async def get_setting(
 
     try:
         value = json.loads(setting.value) if setting.value else None
-    except:
+    except (json.JSONDecodeError, TypeError) as e:
+        logger.warning(f"Failed to parse setting {key}: {e}")
         value = setting.value
 
     return {
@@ -386,7 +391,6 @@ async def reset_to_defaults(
         raise HTTPException(status_code=403, detail="Only superusers can reset settings")
 
     # Delete all existing settings
-    await db.execute(select(AppSettings))
     result = await db.execute(select(AppSettings))
     settings = result.scalars().all()
     for setting in settings:
