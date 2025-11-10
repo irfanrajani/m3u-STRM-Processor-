@@ -10,7 +10,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Fix: Remove trailing dash from image name
+  IMAGE_NAME: ${{ github.repository_owner }}/m3u-strm-processor
 
 jobs:
   # Backend testing
@@ -152,6 +153,11 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    # Fix: Add required permissions for security scanning
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     
     steps:
     - name: Checkout code
