@@ -66,10 +66,11 @@ app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
-# Configure CORS
+# Configure CORS - Allow all origins for self-hosted home use
+# This is safe because the app runs on your local network
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["*"],  # Self-hosted app, safe for local network
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

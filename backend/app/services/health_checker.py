@@ -51,10 +51,11 @@ class StreamHealthChecker:
             start_time = time.time()
 
             try:
+                from app.core.config import settings
                 async with httpx.AsyncClient(
                     timeout=self.timeout,
                     follow_redirects=True,
-                    verify=False  # Some IPTV servers have SSL issues
+                    verify=settings.VERIFY_SSL  # Configurable - IPTV streams often have SSL issues
                 ) as client:
                     # Try HEAD request first (faster)
                     if method == "head":
@@ -175,7 +176,8 @@ class StreamHealthChecker:
             True if stream is accessible
         """
         try:
-            async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
+            from app.core.config import settings
+            async with httpx.AsyncClient(timeout=timeout, verify=settings.VERIFY_SSL) as client:
                 response = await client.head(stream_url, follow_redirects=True)
                 return response.status_code in [200, 206, 302, 301]
         except Exception as e:

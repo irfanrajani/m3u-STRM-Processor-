@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 import os
 import secrets
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -12,7 +13,22 @@ class Settings(BaseSettings):
     APP_NAME: str = "IPTV Stream Manager"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    SECRET_KEY: str = secrets.token_urlsafe(32)  # Auto-generate if not provided
+
+    # Secret key - auto-generate and persist
+    _SECRET_KEY_FILE: Path = Path("/app/data/secret.key")
+
+    @property
+    def SECRET_KEY(self) -> str:
+        """Auto-generate and persist secret key."""
+        # Try to load existing key
+        if self._SECRET_KEY_FILE.exists():
+            return self._SECRET_KEY_FILE.read_text().strip()
+
+        # Generate new key and save it
+        new_key = secrets.token_urlsafe(32)
+        self._SECRET_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        self._SECRET_KEY_FILE.write_text(new_key)
+        return new_key
 
     # Database
     DATABASE_URL: str
@@ -36,6 +52,7 @@ class Settings(BaseSettings):
     DEFAULT_HEALTH_CHECK_TIMEOUT: int = 10
     DEFAULT_HEALTH_CHECK_SCHEDULE: str = "0 3 * * *"  # Daily at 3 AM
     MAX_CONCURRENT_HEALTH_CHECKS: int = 50
+    VERIFY_SSL: bool = False  # Most IPTV streams don't have valid SSL
 
     # Channel Matching Settings
     DEFAULT_FUZZY_MATCH_THRESHOLD: int = 85
