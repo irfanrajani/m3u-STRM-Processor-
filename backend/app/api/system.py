@@ -54,7 +54,11 @@ async def get_system_info(
             "api_base": f"{base_url}/api",
             "hdhr_discover": f"{base_url}/discover.json",
             "hdhr_lineup": f"{base_url}/lineup.json",
-            "m3u_playlist": f"{base_url.replace(':8000', ':8080')}/playlists/merged_playlist_all.m3u" if ":8000" in base_url else f"{base_url}/playlists/merged_playlist_all.m3u"
+            "m3u_playlist": (
+                f"{base_url.replace(':8000', ':8080')}/playlists/merged_playlist_all.m3u"
+                if ":8000" in base_url
+                else f"{base_url}/playlists/merged_playlist_all.m3u"
+            )
         },
         "hdhr": {
             "enabled": True,

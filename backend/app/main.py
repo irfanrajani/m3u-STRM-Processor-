@@ -17,7 +17,11 @@ from app.core.exceptions import (
     validation_exception_handler,
     generic_exception_handler
 )
-from app.api import providers, channels, vod, epg, health, settings as settings_router, auth, hdhr, system, users, favorites, analytics
+from app.api import (
+    providers, channels, vod, epg, health,
+    settings as settings_router, auth, hdhr, system,
+    users, favorites, analytics
+)
 
 # Configure logging
 logging.basicConfig(

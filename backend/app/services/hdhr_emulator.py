@@ -121,7 +121,11 @@ class HDHomeRunEmulator:
 
                 # Add optional fields if available
                 if channel.logo_url:
-                    lineup_entry["HD"] = 1 if "hd" in channel.name.lower() or "1080" in str(best_stream.resolution or "").lower() else 0
+                    is_hd = (
+                        "hd" in channel.name.lower() or
+                        "1080" in str(best_stream.resolution or "").lower()
+                    )
+                    lineup_entry["HD"] = 1 if is_hd else 0
 
                 lineup.append(lineup_entry)
                 channel_number += 1
