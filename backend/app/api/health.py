@@ -1,5 +1,5 @@
 """Health check API endpoints."""
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
@@ -7,7 +7,12 @@ router = APIRouter()
 @router.post("/check")
 async def trigger_health_check():
     """Trigger health check for all streams."""
-    return {"status": "accepted", "message": "Health check task queued"}
+    from app.tasks.health_tasks import health_check_all_streams
+    try:
+        task = health_check_all_streams.delay()
+        return {"status": "accepted", "message": "Health check task queued", "task_id": task.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to queue health check: {str(e)}")
 
 
 @router.get("/status")

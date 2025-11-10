@@ -17,6 +17,7 @@ export const updateProvider = (id, data) => api.put(`/providers/${id}`, data)
 export const deleteProvider = (id) => api.delete(`/providers/${id}`)
 export const testProvider = (id) => api.post(`/providers/${id}/test`)
 export const syncProvider = (id) => api.post(`/providers/${id}/sync`)
+export const syncAllProviders = () => api.post('/providers/sync-all')
 
 // Channels
 export const getChannels = (params) => api.get('/channels/', { params })

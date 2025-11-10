@@ -82,7 +82,12 @@ async def list_series(
 @router.post("/generate-strm")
 async def generate_strm_files(db: AsyncSession = Depends(get_db)):
     """Trigger STRM file generation."""
-    return {"status": "accepted", "message": "STRM generation task queued"}
+    from app.tasks.vod_tasks import generate_strm_files as generate_strm_task
+    try:
+        task = generate_strm_task.delay()
+        return {"status": "accepted", "message": "STRM generation task queued", "task_id": task.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to queue STRM generation: {str(e)}")
 
 
 @router.get("/stats")

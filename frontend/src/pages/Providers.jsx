@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getProviders, deleteProvider, testProvider, syncProvider } from '../services/api'
+import { getProviders, createProvider, deleteProvider, testProvider, syncProvider } from '../services/api'
 import { Plus, Trash2, TestTube, RefreshCw } from 'lucide-react'
+import AddProviderModal from '../components/AddProviderModal'
 
 export default function Providers() {
   const queryClient = useQueryClient()
@@ -10,6 +11,14 @@ export default function Providers() {
   const { data, isLoading } = useQuery({
     queryKey: ['providers'],
     queryFn: getProviders,
+  })
+
+  const createMutation = useMutation({
+    mutationFn: createProvider,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['providers'])
+      setShowAddModal(false)
+    },
   })
 
   const deleteMutation = useMutation({
@@ -100,6 +109,12 @@ export default function Providers() {
           ))}
         </ul>
       </div>
+
+      <AddProviderModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={(data) => createMutation.mutate(data)}
+      />
     </div>
   )
 }

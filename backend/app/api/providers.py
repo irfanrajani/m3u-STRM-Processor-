@@ -174,6 +174,21 @@ async def sync_provider(provider_id: int, db: AsyncSession = Depends(get_db)):
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
 
-    # This will be handled by Celery task in production
-    # For now, return accepted status
-    return {"status": "accepted", "message": "Sync task queued"}
+    # Queue Celery task
+    from app.tasks.sync_tasks import sync_provider as sync_provider_task
+    try:
+        task = sync_provider_task.delay(provider_id)
+        return {"status": "accepted", "message": "Sync task queued", "task_id": task.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to queue sync task: {str(e)}")
+
+
+@router.post("/sync-all")
+async def sync_all_providers(db: AsyncSession = Depends(get_db)):
+    """Trigger synchronization for all enabled providers."""
+    from app.tasks.sync_tasks import sync_all_providers as sync_all_task
+    try:
+        task = sync_all_task.delay()
+        return {"status": "accepted", "message": "Sync all providers task queued", "task_id": task.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to queue sync all task: {str(e)}")

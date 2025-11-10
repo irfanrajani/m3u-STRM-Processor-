@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { getProviders, getVODStats, getHealthStatus } from '../services/api'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { getProviders, getVODStats, getHealthStatus, syncAllProviders, generateSTRM, triggerHealthCheck } from '../services/api'
 import { Radio, Tv, Film, Activity } from 'lucide-react'
 
 function StatCard({ title, value, icon: Icon, color }) {
@@ -36,6 +36,27 @@ export default function Dashboard() {
   const { data: healthStatus } = useQuery({
     queryKey: ['healthStatus'],
     queryFn: getHealthStatus,
+  })
+
+  const syncAllMutation = useMutation({
+    mutationFn: syncAllProviders,
+    onSuccess: () => {
+      alert('Sync started! This may take several minutes.')
+    },
+  })
+
+  const healthCheckMutation = useMutation({
+    mutationFn: triggerHealthCheck,
+    onSuccess: () => {
+      alert('Health check started! This may take several minutes.')
+    },
+  })
+
+  const strmMutation = useMutation({
+    mutationFn: generateSTRM,
+    onSuccess: () => {
+      alert('STRM generation started! Check the output folder when complete.')
+    },
   })
 
   const activeProviders = providers?.data?.filter(p => p.enabled).length || 0
@@ -77,14 +98,26 @@ export default function Dashboard() {
       <div className="mt-8 bg-white shadow rounded-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-            Sync All Providers
+          <button
+            onClick={() => syncAllMutation.mutate()}
+            disabled={syncAllMutation.isLoading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {syncAllMutation.isLoading ? 'Syncing...' : 'Sync All Providers'}
           </button>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-            Run Health Check
+          <button
+            onClick={() => healthCheckMutation.mutate()}
+            disabled={healthCheckMutation.isLoading}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+          >
+            {healthCheckMutation.isLoading ? 'Checking...' : 'Run Health Check'}
           </button>
-          <button className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
-            Generate STRM Files
+          <button
+            onClick={() => strmMutation.mutate()}
+            disabled={strmMutation.isLoading}
+            className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
+          >
+            {strmMutation.isLoading ? 'Generating...' : 'Generate STRM Files'}
           </button>
         </div>
       </div>
