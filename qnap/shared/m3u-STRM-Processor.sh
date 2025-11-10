@@ -23,6 +23,12 @@ case "$1" in
         exit 1
     fi
 
+    # Check for Docker and docker-compose
+    if ! [ -x "/usr/bin/docker" ] || ! [ -x "/usr/bin/docker-compose" ]; then
+        log_msg "Error: Docker or docker-compose is not installed or not in path. Please install Container Station."
+        exit 1
+    fi
+
     log_msg "Starting m3u-STRM-Processor service..."
     # Use docker-compose for compatibility
     /usr/bin/docker-compose -f "$QPKG_ROOT/docker-compose.yml" up -d
