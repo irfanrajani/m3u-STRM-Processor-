@@ -127,6 +127,16 @@ services:
       - "8080:80"
     restart: unless-stopped
 
+  m3u-strm-processor:
+    build: .
+    container_name: m3u-strm-processor
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./output:/app/output
+      - ./logs:/app/logs
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redis_data:

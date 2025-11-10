@@ -1,0 +1,34 @@
+name: Build QPKG
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up QDK
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+        wget https://github.com/qnap-dev/qdk2/releases/download/v2.3.13/qdk2_2.3.13-x86_64.tar.gz
+        tar -xvf qdk2_2.3.13-x86_64.tar.gz
+        echo "QDK_DIR=$(pwd)/qdk2" >> $GITHUB_ENV
+
+    - name: Make build script executable
+      run: chmod +x build_qpkg.sh
+
+    - name: Build QPKG
+      run: ./build_qpkg.sh
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: m3u-strm-processor-qpkg
+        path: build/m3u-STRM-Processor.qpkg
