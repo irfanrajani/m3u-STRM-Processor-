@@ -1,6 +1,6 @@
 """Application configuration."""
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List
 import os
 import secrets
 
@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "IPTV Stream Manager"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    SECRET_KEY: str = secrets.token_urlsafe(32)  # Auto-generate if not provided
+    SECRET_KEY: str  # REQUIRED - Must be set in .env for production
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]  # CORS allowed origins
 
     # Database
     DATABASE_URL: str
@@ -36,6 +37,7 @@ class Settings(BaseSettings):
     DEFAULT_HEALTH_CHECK_TIMEOUT: int = 10
     DEFAULT_HEALTH_CHECK_SCHEDULE: str = "0 3 * * *"  # Daily at 3 AM
     MAX_CONCURRENT_HEALTH_CHECKS: int = 50
+    VERIFY_SSL: bool = False  # Set to True in production with valid SSL certs
 
     # Channel Matching Settings
     DEFAULT_FUZZY_MATCH_THRESHOLD: int = 85
