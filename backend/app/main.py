@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import init_db, close_db
-from app.api import providers, channels, vod, epg, health, settings as settings_router
+from app.api import providers, channels, vod, epg, health, settings as settings_router, auth
 
 # Configure logging
 logging.basicConfig(
@@ -53,6 +53,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(providers.router, prefix="/api/providers", tags=["providers"])
 app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
