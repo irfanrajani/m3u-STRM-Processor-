@@ -1,5 +1,5 @@
 """HDHomeRun emulation API endpoints."""
-from fastapi import APIRouter, Depends, Response, HTTPException
+from fastapi import APIRouter, Depends, Response, HTTPException, Request
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -15,18 +15,42 @@ logger = logging.getLogger(__name__)
 hdhr = HDHomeRunEmulator()
 
 
-def get_base_url() -> str:
-    """Get base URL for this server."""
-    # Use configured external URL or construct from settings
-    if hasattr(settings, 'EXTERNAL_URL') and settings.EXTERNAL_URL:
+def get_base_url(request: Request) -> str:
+    """
+    Get base URL for this server - auto-detects from request.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        Base URL (e.g., http://192.168.1.100:8000)
+    """
+    # Use configured external URL if provided
+    if settings.EXTERNAL_URL:
         return settings.EXTERNAL_URL.rstrip('/')
-    return f"http://localhost:{settings.API_PORT}"
+
+    # Auto-detect from request
+    scheme = request.url.scheme
+    host = request.client.host if request.client else "localhost"
+
+    # Try to get the actual host from headers (in case of proxy)
+    forwarded_host = request.headers.get("x-forwarded-host")
+    if forwarded_host:
+        return f"{scheme}://{forwarded_host}"
+
+    # Use host header
+    host_header = request.headers.get("host")
+    if host_header:
+        return f"{scheme}://{host_header}"
+
+    # Fallback
+    return f"{scheme}://{host}:{settings.API_PORT}"
 
 
 @router.get("/discover.json")
-async def discover():
+async def discover(request: Request):
     """HDHomeRun device discovery endpoint."""
-    base_url = get_base_url()
+    base_url = get_base_url(request)
     return hdhr.get_discover_data(base_url)
 
 
@@ -37,18 +61,18 @@ async def lineup_status():
 
 
 @router.get("/lineup.json")
-async def lineup(db: AsyncSession = Depends(get_db)):
+async def lineup(request: Request, db: AsyncSession = Depends(get_db)):
     """HDHomeRun channel lineup endpoint."""
-    base_url = get_base_url()
+    base_url = get_base_url(request)
     # Get proxy mode from settings
-    proxy_mode = getattr(settings, 'HDHR_PROXY_MODE', 'direct')
+    proxy_mode = settings.HDHR_PROXY_MODE
     return await hdhr.get_lineup(db, base_url, proxy_mode)
 
 
 @router.get("/device.xml")
-async def device_xml():
+async def device_xml(request: Request):
     """HDHomeRun device XML for SSDP discovery."""
-    base_url = get_base_url()
+    base_url = get_base_url(request)
     xml_content = hdhr.get_device_xml(base_url)
     return Response(content=xml_content, media_type="application/xml")
 

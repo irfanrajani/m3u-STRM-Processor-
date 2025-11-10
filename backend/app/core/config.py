@@ -2,6 +2,7 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
 import os
+import secrets
 
 
 class Settings(BaseSettings):
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "IPTV Stream Manager"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    SECRET_KEY: str
+    SECRET_KEY: str = secrets.token_urlsafe(32)  # Auto-generate if not provided
 
     # Database
     DATABASE_URL: str
