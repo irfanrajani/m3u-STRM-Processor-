@@ -1,13 +1,65 @@
 """Provider manager service - handles Xstream API and M3U playlist parsing."""
 import httpx
-import m3u_ipytv
 import asyncio
 import logging
+import re
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from urllib.parse import urljoin
 
 logger = logging.getLogger(__name__)
+
+
+def parse_m3u(content: str) -> List[Dict]:
+    """
+    Parse M3U playlist content into list of channel dictionaries.
+    Replaces the broken m3u-ipytv package with a reliable custom parser.
+    """
+    channels = []
+    lines = content.strip().split('\n')
+
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+
+        # Skip empty lines and M3U header
+        if not line or line == '#EXTM3U':
+            i += 1
+            continue
+
+        # Parse EXTINF line
+        if line.startswith('#EXTINF:'):
+            # Extract attributes from the line
+            channel_data = {}
+
+            # Parse tvg-id, tvg-name, tvg-logo, group-title, etc.
+            # Pattern: attribute="value" or attribute='value'
+            attr_pattern = r'(\w+(?:-\w+)*)=["\']([^"\']*)["\']'
+            attributes = re.findall(attr_pattern, line)
+
+            for attr_name, attr_value in attributes:
+                channel_data[attr_name] = attr_value
+
+            # Extract channel name (everything after the last comma)
+            name_match = re.search(r',(.+)$', line)
+            if name_match:
+                channel_data['name'] = name_match.group(1).strip()
+
+            # Get the URL from the next non-empty line
+            i += 1
+            while i < len(lines):
+                url_line = lines[i].strip()
+                if url_line and not url_line.startswith('#'):
+                    channel_data['url'] = url_line
+                    break
+                i += 1
+
+            if 'url' in channel_data:
+                channels.append(channel_data)
+
+        i += 1
+
+    return channels
 
 
 class XstreamProvider:
@@ -143,7 +195,7 @@ class M3UProvider:
             return []
 
         try:
-            playlist = m3u_ipytv.parse(content)
+            playlist = parse_m3u(content)
             channels = []
 
             for item in playlist:

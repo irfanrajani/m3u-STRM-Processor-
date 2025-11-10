@@ -22,9 +22,6 @@ python-ffmpeg==2.0.12
 # String Matching
 rapidfuzz==3.5.2
 
-# M3U Parsing
-m3u-ipytv==0.2.6
-
 # XML/EPG Processing
 lxml==4.9.3
 xmltodict==0.13.0
