@@ -182,7 +182,16 @@ async def add_favorite(
     await db.refresh(new_favorite)
 
     # Load relationships
-    await db.refresh(new_favorite, ["channel", "vod_movie", "vod_series"])
+    result = await db.execute(
+        select(UserFavorite)
+        .options(
+            selectinload(UserFavorite.channel),
+            selectinload(UserFavorite.vod_movie),
+            selectinload(UserFavorite.vod_series)
+        )
+        .where(UserFavorite.id == new_favorite.id)
+    )
+    new_favorite = result.scalar_one()
 
     return FavoriteResponse(
         id=new_favorite.id,

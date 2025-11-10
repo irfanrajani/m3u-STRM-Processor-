@@ -128,7 +128,16 @@ async def start_viewing_session(
     await db.refresh(new_history)
 
     # Load relationships
-    await db.refresh(new_history, ["channel", "vod_movie", "vod_series"])
+    result = await db.execute(
+        select(ViewingHistory)
+        .options(
+            selectinload(ViewingHistory.channel),
+            selectinload(ViewingHistory.vod_movie),
+            selectinload(ViewingHistory.vod_series)
+        )
+        .where(ViewingHistory.id == new_history.id)
+    )
+    new_history = result.scalar_one()
 
     return ViewingHistoryResponse(
         id=new_history.id,

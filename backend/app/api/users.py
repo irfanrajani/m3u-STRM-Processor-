@@ -6,7 +6,7 @@ from sqlalchemy import select, func
 from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.core.auth import get_current_user, require_admin
-from app.core.security import hash_password
+from app.core.security import get_password_hash
 from app.models.user import User, UserRole
 
 router = APIRouter()
@@ -149,7 +149,7 @@ async def create_user(
     new_user = User(
         username=user_data.username,
         email=user_data.email,
-        hashed_password=hash_password(user_data.password),
+        hashed_password=get_password_hash(user_data.password),
         full_name=user_data.full_name,
         role=user_data.role,
         is_active=True
@@ -198,6 +198,18 @@ async def update_user(
 
     # Update fields
     if user_data.email is not None:
+        # Check if email is already in use by another user
+        existing_email = await db.scalar(
+            select(User).where(
+                User.email == user_data.email,
+                User.id != user_id
+            )
+        )
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already in use"
+            )
         user.email = user_data.email
     if user_data.full_name is not None:
         user.full_name = user_data.full_name
