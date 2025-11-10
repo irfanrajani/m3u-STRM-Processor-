@@ -70,12 +70,16 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-# Ensure output directories exist
-for directory in [
-    settings.OUTPUT_DIR,
-    settings.PLAYLISTS_DIR,
-    settings.STRM_DIR,
-    settings.EPG_DIR,
-    os.path.dirname(settings.LOG_FILE)
-]:
-    os.makedirs(directory, exist_ok=True)
+# Ensure output directories exist (skip in CI/test environments)
+try:
+    for directory in [
+        settings.OUTPUT_DIR,
+        settings.PLAYLISTS_DIR,
+        settings.STRM_DIR,
+        settings.EPG_DIR,
+        os.path.dirname(settings.LOG_FILE)
+    ]:
+        os.makedirs(directory, exist_ok=True)
+except (PermissionError, OSError):
+    # In CI or restricted environments, directories will be created when needed
+    pass
