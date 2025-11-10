@@ -1,0 +1,40 @@
+name: Build Docker Images for Download
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.backend
+          load: true
+          tags: iptv-backend:latest
+
+      - name: Build frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.frontend
+          load: true
+          tags: iptv-frontend:latest
+
+      - name: Save images
+        run: |
+          docker save iptv-backend:latest -o backend.tar
+          docker save iptv-frontend:latest -o frontend.tar
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: docker-images
+          path: "*.tar"
