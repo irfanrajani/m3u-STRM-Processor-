@@ -71,7 +71,7 @@ jobs:
 
     - name: Check imports
       env:
-        DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
         REDIS_URL: redis://localhost:6379/0
         CELERY_BROKER_URL: redis://localhost:6379/0
         CELERY_RESULT_BACKEND: redis://localhost:6379/0
