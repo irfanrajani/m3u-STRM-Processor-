@@ -70,12 +70,12 @@ jobs:
         flake8 app --count --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Check imports
-        env:
-          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
-          REDIS_URL: redis://localhost:6379/0
-          CELERY_BROKER_URL: redis://localhost:6379/0
-          CELERY_RESULT_BACKEND: redis://localhost:6379/0
-          SECRET_KEY: test-secret-key-for-ci
+      env:
+        DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        REDIS_URL: redis://localhost:6379/0
+        CELERY_BROKER_URL: redis://localhost:6379/0
+        CELERY_RESULT_BACKEND: redis://localhost:6379/0
+        SECRET_KEY: test-secret-key-for-ci
       run: |
         cd backend
         python -c "
