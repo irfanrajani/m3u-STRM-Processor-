@@ -86,7 +86,7 @@ jobs:
         try:
             from app.core import config, database, security, auth
             from app.models import user, provider, channel, vod, settings
-            from app.api import auth, providers, channels, vod, health, system, users, favorites, analytics
+            from app.api import auth as auth_api, providers, channels, vod as vod_api, health, system, users, favorites, analytics
             print('✓ All imports successful')
         except ImportError as e:
             print(f'✗ Import error: {e}')
