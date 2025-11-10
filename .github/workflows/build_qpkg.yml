@@ -16,10 +16,18 @@ jobs:
     - name: Set up QDK
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential
-        wget https://github.com/qnap-dev/qdk2/releases/download/v2.4.0/qdk2_2.4.0-x86_64.tar.gz
-        tar -xvf qdk2_2.4.0-x86_64.tar.gz
-        echo "QDK_DIR=$(pwd)/qdk2" >> $GITHUB_ENV
+        sudo apt-get install -y build-essential jq curl
+        latest_asset=$(curl -s https://api.github.com/repos/qnap-dev/qdk2/releases/latest | jq -r '.assets[] | select(.name | test("x86_64.*\\.tar\\.gz$")) | .browser_download_url' | head -n 1)
+        if [ -z "$latest_asset" ]; then
+          echo "Unable to determine QDK2 download URL" >&2
+          exit 1
+        fi
+        curl -LO "$latest_asset"
+        tarball=$(basename "$latest_asset")
+        tar -xvf "$tarball"
+        extracted_dir=$(tar -tf "$tarball" | head -1 | cut -d/ -f1)
+        rm -f "$tarball"
+        echo "QDK_DIR=$(pwd)/${extracted_dir}" >> $GITHUB_ENV
 
     - name: Make build script executable
       run: chmod +x build_qpkg.sh

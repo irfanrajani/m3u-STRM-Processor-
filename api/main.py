@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import requests
 import os
 import logging
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,33 +37,22 @@ def parse_m3u(content):
     return playlist
 
 def create_strm_files(playlist, output_path):
-    # Secure the output path
-    # This prevents directory traversal attacks (e.g., ../../)
-    # It resolves the path and ensures it's within the intended base directory.
-    # Assuming '/output' inside the container is the base for all user-writable content.
-    base_path = os.path.abspath("/output")
-    safe_output_path = os.path.abspath(os.path.join(base_path, output_path))
-
-    if not safe_output_path.startswith(base_path):
-        logger.error(f"Attempted directory traversal: {output_path}")
+    base_path = Path("/output").resolve()
+    safe_output_path = (base_path / output_path).resolve()
+    if base_path != safe_output_path and base_path not in safe_output_path.parents:
+        logger.error("Attempted directory traversal: %s", output_path)
         raise ValueError("Invalid output path specified.")
+    safe_output_path.mkdir(parents=True, exist_ok=True)
 
-    if not os.path.exists(safe_output_path):
-        os.makedirs(safe_output_path)
-        
     for item in playlist:
         if 'name' not in item or 'url' not in item:
             continue
-            
-        # Sanitize channel name to create a valid filename
         sanitized_name = "".join(c for c in item['name'] if c.isalnum() or c in (' ', '.', '_')).rstrip()
-        filename = os.path.join(safe_output_path, f"{sanitized_name}.strm")
-        
+        filename = safe_output_path / f"{sanitized_name}.strm"
         try:
-            with open(filename, 'w') as f:
-                f.write(item['url'])
-        except IOError as e:
-            logger.error(f"Could not write to file {filename}: {e}")
+            filename.write_text(item['url'])
+        except OSError as exc:
+            logger.error("Could not write %s: %s", filename, exc)
 
 
 @app.post("/process-m3u/")
@@ -77,12 +67,12 @@ async def process_m3u(request: M3URequest):
         
         logger.info("Successfully created STRM files.")
         return {"message": "STRM files created successfully"}
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching M3U file: {e}")
-        raise HTTPException(status_code=400, detail=f"Error fetching M3U file: {e}")
-    except ValueError as e:
-        logger.error(f"Path validation error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
-        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+    except requests.exceptions.RequestException as exc:
+        logger.error("Error fetching M3U file: %s", exc)
+        raise HTTPException(status_code=400, detail=f"Error fetching M3U file: {exc}")
+    except ValueError as exc:
+        logger.error("Path validation error: %s", exc)
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.error("An unexpected error occurred: %s", exc)
+        raise HTTPException(status_code=500, detail=f"An error occurred: {exc}")

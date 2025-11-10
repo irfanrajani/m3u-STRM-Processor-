@@ -17,6 +17,13 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
 # Run QDK build command
-"$QDK_DIR/bin/qbuild" --root "$PACKAGE_DIR" --build-dir "$BUILD_DIR"
+QBUILD_BIN="$QDK_DIR/bin/qbuild"
+
+if [ ! -x "$QBUILD_BIN" ]; then
+    echo "qbuild not found at $QBUILD_BIN"
+    exit 1
+fi
+
+"$QBUILD_BIN" --root "$PACKAGE_DIR" --build-dir "$BUILD_DIR"
 
 echo "QPKG has been built in $BUILD_DIR"
