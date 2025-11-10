@@ -293,7 +293,7 @@ async def _sync_all_providers_async():
     """Async implementation of sync all providers."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(
-            select(Provider).where(Provider.enabled == True)
+            select(Provider).where(Provider.enabled.is_(True))
         )
         providers = result.scalars().all()
 

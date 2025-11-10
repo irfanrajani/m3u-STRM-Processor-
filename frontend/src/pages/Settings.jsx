@@ -238,17 +238,17 @@ export default function Settings() {
           )}
           <button
             onClick={handleReset}
-            disabled={resetMutation.isLoading}
+            disabled={resetMutation.isPending}
             className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-colors disabled:opacity-50"
           >
             Reset to Defaults
           </button>
           <button
             onClick={handleSave}
-            disabled={saveMutation.isLoading || !hasChanges}
+            disabled={saveMutation.isPending || !hasChanges}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {saveMutation.isLoading ? 'Saving...' : 'Save Changes'}
+            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

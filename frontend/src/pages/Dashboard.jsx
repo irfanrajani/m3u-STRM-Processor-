@@ -100,24 +100,24 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <button
             onClick={() => syncAllMutation.mutate()}
-            disabled={syncAllMutation.isLoading}
+            disabled={syncAllMutation.isPending}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {syncAllMutation.isLoading ? 'Syncing...' : 'Sync All Providers'}
+            {syncAllMutation.isPending ? 'Syncing...' : 'Sync All Providers'}
           </button>
           <button
             onClick={() => healthCheckMutation.mutate()}
-            disabled={healthCheckMutation.isLoading}
+            disabled={healthCheckMutation.isPending}
             className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
           >
-            {healthCheckMutation.isLoading ? 'Checking...' : 'Run Health Check'}
+            {healthCheckMutation.isPending ? 'Checking...' : 'Run Health Check'}
           </button>
           <button
             onClick={() => strmMutation.mutate()}
-            disabled={strmMutation.isLoading}
+            disabled={strmMutation.isPending}
             className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
           >
-            {strmMutation.isLoading ? 'Generating...' : 'Generate STRM Files'}
+            {strmMutation.isPending ? 'Generating...' : 'Generate STRM Files'}
           </button>
         </div>
       </div>

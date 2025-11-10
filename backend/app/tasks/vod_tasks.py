@@ -82,8 +82,8 @@ async def _sync_movies(db, provider, xstream):
                         year_str = title[title.rfind('(') + 1:title.rfind(')')]
                         if year_str.isdigit() and len(year_str) == 4:
                             year = int(year_str)
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"Failed to parse year from title '{title}': {e}")
 
                 normalized_title = title.lower().strip()
 
@@ -246,7 +246,7 @@ async def _generate_strm_files_async():
 
             # Generate movie STRM files
             result = await db.execute(
-                select(VODMovie).where(VODMovie.is_active == True)
+                select(VODMovie).where(VODMovie.is_active.is_(True))
             )
             movies = result.scalars().all()
 
@@ -270,7 +270,7 @@ async def _generate_strm_files_async():
 
             # Generate series STRM files
             result = await db.execute(
-                select(VODSeries).where(VODSeries.is_active == True)
+                select(VODSeries).where(VODSeries.is_active.is_(True))
             )
             series_list = result.scalars().all()
 
@@ -282,7 +282,7 @@ async def _generate_strm_files_async():
                     episodes_result = await db.execute(
                         select(VODEpisode).where(
                             VODEpisode.series_id == series.id,
-                            VODEpisode.is_active == True
+                            VODEpisode.is_active.is_(True)
                         )
                     )
                     episodes = episodes_result.scalars().all()

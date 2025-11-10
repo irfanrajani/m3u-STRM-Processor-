@@ -25,7 +25,7 @@ async def _run_health_check_async():
 
             # Get all active streams
             result = await db.execute(
-                select(ChannelStream).where(ChannelStream.is_active == True)
+                select(ChannelStream).where(ChannelStream.is_active.is_(True))
             )
             streams = result.scalars().all()
 
@@ -111,7 +111,7 @@ async def _update_channel_stream_counts(db):
         count_result = await db.execute(
             select(ChannelStream).where(
                 ChannelStream.channel_id == channel.id,
-                ChannelStream.is_active == True
+                ChannelStream.is_active.is_(True)
             )
         )
         active_streams = count_result.scalars().all()
@@ -144,7 +144,7 @@ async def _check_provider_streams_async(provider_id: int):
             result = await db.execute(
                 select(ChannelStream).where(
                     ChannelStream.provider_id == provider_id,
-                    ChannelStream.is_active == True
+                    ChannelStream.is_active.is_(True)
                 )
             )
             streams = result.scalars().all()

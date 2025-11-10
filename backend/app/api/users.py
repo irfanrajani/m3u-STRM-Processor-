@@ -107,7 +107,7 @@ async def get_user_stats(
         select(func.count(User.id)).where(User.role == UserRole.ADMIN)
     )
     active = await db.scalar(
-        select(func.count(User.id)).where(User.is_active == True)
+        select(func.count(User.id)).where(User.is_active.is_(True))
     )
 
     return UserStats(

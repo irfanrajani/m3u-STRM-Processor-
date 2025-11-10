@@ -35,7 +35,7 @@ class PlaylistGenerator:
         """
         try:
             # Build query
-            query = select(Channel).where(Channel.enabled == True, Channel.stream_count > 0)
+            query = select(Channel).where(Channel.enabled.is_(True), Channel.stream_count > 0)
 
             if category:
                 query = query.where(Channel.category == category)
@@ -56,7 +56,7 @@ class PlaylistGenerator:
                     select(ChannelStream)
                     .where(
                         ChannelStream.channel_id == channel.id,
-                        ChannelStream.is_active == True
+                        ChannelStream.is_active.is_(True)
                     )
                     .order_by(ChannelStream.priority_order)
                     .limit(1)
@@ -123,7 +123,7 @@ class PlaylistGenerator:
         """
         try:
             # Build query
-            query = select(Channel).where(Channel.enabled == True, Channel.stream_count > 0)
+            query = select(Channel).where(Channel.enabled.is_(True), Channel.stream_count > 0)
 
             if category:
                 query = query.where(Channel.category == category)
@@ -144,7 +144,7 @@ class PlaylistGenerator:
                     select(ChannelStream)
                     .where(
                         ChannelStream.channel_id == channel.id,
-                        ChannelStream.is_active == True
+                        ChannelStream.is_active.is_(True)
                     )
                     .order_by(ChannelStream.priority_order)
                 )
@@ -215,7 +215,7 @@ class PlaylistGenerator:
             # Get all categories
             result = await db.execute(
                 select(Channel.category)
-                .where(Channel.enabled == True, Channel.stream_count > 0)
+                .where(Channel.enabled.is_(True), Channel.stream_count > 0)
                 .distinct()
             )
             categories = [row[0] for row in result.all() if row[0]]

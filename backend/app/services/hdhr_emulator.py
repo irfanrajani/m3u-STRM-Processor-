@@ -82,7 +82,7 @@ class HDHomeRunEmulator:
             # Get all enabled channels with active streams
             result = await db.execute(
                 select(Channel)
-                .where(Channel.enabled == True, Channel.stream_count > 0)
+                .where(Channel.enabled.is_(True), Channel.stream_count > 0)
                 .order_by(Channel.category, Channel.name)
             )
             channels = result.scalars().all()
@@ -96,7 +96,7 @@ class HDHomeRunEmulator:
                     select(ChannelStream)
                     .where(
                         ChannelStream.channel_id == channel.id,
-                        ChannelStream.is_active == True
+                        ChannelStream.is_active.is_(True)
                     )
                     .order_by(ChannelStream.priority_order)
                     .limit(1)
@@ -161,7 +161,7 @@ class HDHomeRunEmulator:
                 select(ChannelStream)
                 .where(
                     ChannelStream.channel_id == channel.id,
-                    ChannelStream.is_active == True
+                    ChannelStream.is_active.is_(True)
                 )
                 .order_by(ChannelStream.priority_order)
                 .limit(1)

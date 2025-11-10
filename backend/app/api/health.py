@@ -27,12 +27,12 @@ async def get_health_status(db: AsyncSession = Depends(get_db)):
 
     # Get active streams
     active_streams = await db.scalar(
-        select(func.count(ChannelStream.id)).where(ChannelStream.is_active == True)
+        select(func.count(ChannelStream.id)).where(ChannelStream.is_active.is_(True))
     )
 
     # Get failed streams (inactive)
     failed_streams = await db.scalar(
-        select(func.count(ChannelStream.id)).where(ChannelStream.is_active == False)
+        select(func.count(ChannelStream.id)).where(ChannelStream.is_active.is_(False))
     )
 
     # Get last check time from most recent stream update

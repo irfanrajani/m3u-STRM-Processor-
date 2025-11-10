@@ -59,7 +59,7 @@ async def _refresh_all_epg_async():
         try:
             result = await db.execute(
                 select(Provider).where(
-                    Provider.enabled == True,
+                    Provider.enabled.is_(True),
                     Provider.epg_url != None
                 )
             )

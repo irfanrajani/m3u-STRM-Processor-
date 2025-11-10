@@ -45,7 +45,7 @@ async def list_movies(
     db: AsyncSession = Depends(get_db)
 ):
     """List VOD movies."""
-    query = select(VODMovie).where(VODMovie.is_active == True)
+    query = select(VODMovie).where(VODMovie.is_active.is_(True))
 
     if genre:
         query = query.where(VODMovie.genre == genre)
@@ -66,7 +66,7 @@ async def list_series(
     db: AsyncSession = Depends(get_db)
 ):
     """List VOD series."""
-    query = select(VODSeries).where(VODSeries.is_active == True)
+    query = select(VODSeries).where(VODSeries.is_active.is_(True))
 
     if genre:
         query = query.where(VODSeries.genre == genre)
@@ -93,9 +93,9 @@ async def generate_strm_files(db: AsyncSession = Depends(get_db)):
 @router.get("/stats")
 async def get_vod_stats(db: AsyncSession = Depends(get_db)):
     """Get VOD statistics."""
-    movie_count = await db.scalar(select(func.count(VODMovie.id)).where(VODMovie.is_active == True))
-    series_count = await db.scalar(select(func.count(VODSeries.id)).where(VODSeries.is_active == True))
-    episode_count = await db.scalar(select(func.count(VODEpisode.id)).where(VODEpisode.is_active == True))
+    movie_count = await db.scalar(select(func.count(VODMovie.id)).where(VODMovie.is_active.is_(True)))
+    series_count = await db.scalar(select(func.count(VODSeries.id)).where(VODSeries.is_active.is_(True)))
+    episode_count = await db.scalar(select(func.count(VODEpisode.id)).where(VODEpisode.is_active.is_(True)))
 
     return {
         "total_movies": movie_count or 0,

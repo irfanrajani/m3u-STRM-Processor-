@@ -35,11 +35,11 @@ export default function VOD() {
         <h1 className="text-3xl font-bold text-gray-900">Video on Demand</h1>
         <button
           onClick={() => generateMutation.mutate()}
-          disabled={generateMutation.isLoading}
+          disabled={generateMutation.isPending}
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
         >
           <Download className="mr-2 h-4 w-4" />
-          {generateMutation.isLoading ? 'Generating...' : 'Generate STRM Files'}
+          {generateMutation.isPending ? 'Generating...' : 'Generate STRM Files'}
         </button>
       </div>
 
