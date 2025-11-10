@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from sqlalchemy import select, update
 from app.tasks.celery_app import celery_app
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_session_factory
 from app.models.channel import ChannelStream, Channel
 from app.services.health_checker import StreamHealthChecker
 
@@ -19,7 +19,8 @@ def run_health_check():
 
 async def _run_health_check_async():
     """Async implementation of health check."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         try:
             logger.info("Starting health check for all streams")
 
@@ -136,7 +137,8 @@ def check_provider_streams(provider_id: int):
 
 async def _check_provider_streams_async(provider_id: int):
     """Async implementation of provider-specific health check."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         try:
             logger.info(f"Starting health check for provider {provider_id}")
 

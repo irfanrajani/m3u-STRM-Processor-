@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from sqlalchemy import select
 from app.tasks.celery_app import celery_app
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_session_factory
 from app.models.provider import Provider
 from app.models.channel import Channel, ChannelStream
 from app.services.provider_manager import ProviderManager
@@ -27,7 +27,8 @@ def sync_provider(provider_id: int):
 
 async def _sync_provider_async(provider_id: int):
     """Async implementation of provider sync."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         try:
             # Get provider
             result = await db.execute(select(Provider).where(Provider.id == provider_id))
@@ -291,7 +292,8 @@ def sync_all_providers():
 
 async def _sync_all_providers_async():
     """Async implementation of sync all providers."""
-    async with AsyncSessionLocal() as db:
+    session_factory = get_session_factory()
+    async with session_factory() as db:
         result = await db.execute(
             select(Provider).where(Provider.enabled.is_(True))
         )
