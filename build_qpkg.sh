@@ -16,6 +16,12 @@ PACKAGE_DIR="$PROJECT_DIR/qnap"
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
+# Ensure docker-compose.yml is in the qnap directory
+if [ ! -f "$PACKAGE_DIR/docker-compose.yml" ]; then
+    echo "Error: docker-compose.yml not found in qnap directory"
+    exit 1
+fi
+
 # Run QDK build command
 QBUILD_BIN="$QDK_DIR/bin/qbuild"
 

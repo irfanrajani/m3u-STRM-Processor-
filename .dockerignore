@@ -1,0 +1,20 @@
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+
+.DS_Store
+.env
+.env.*
+.vscode
+.idea
+
+# Node specific
+node_modules
+npm-debug.log
+yarn-error.log
+frontend/dist

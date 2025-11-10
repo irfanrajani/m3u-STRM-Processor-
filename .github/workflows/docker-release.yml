@@ -1,4 +1,4 @@
-name: Build Docker Images for Download
+name: Build Docker Image for Download
 
 on:
   workflow_dispatch:
@@ -13,28 +13,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
 
-      - name: Build backend
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./docker/Dockerfile.backend
+          file: ./Dockerfile
           load: true
-          tags: iptv-backend:latest
+          tags: m3u-strm-processor:latest
 
-      - name: Build frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile.frontend
-          load: true
-          tags: iptv-frontend:latest
-
-      - name: Save images
+      - name: Save image
         run: |
-          docker save iptv-backend:latest -o backend.tar
-          docker save iptv-frontend:latest -o frontend.tar
+          docker save m3u-strm-processor:latest -o m3u-strm-processor.tar
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: docker-images
-          path: "*.tar"
+          name: docker-image
+          path: m3u-strm-processor.tar
