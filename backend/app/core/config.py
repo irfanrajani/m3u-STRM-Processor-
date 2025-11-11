@@ -1,8 +1,9 @@
 """Application configuration."""
 from pydantic_settings import BaseSettings
-from typing import Optional, List
+from pydantic import field_validator
+from typing import Optional, List, Union
 import os
-import secrets
+import json
 
 
 class Settings(BaseSettings):
@@ -13,7 +14,20 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     SECRET_KEY: str  # REQUIRED - Must be set in .env for production
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]  # CORS allowed origins
+    ALLOWED_ORIGINS: Union[List[str], str] = '["http://localhost:3000","http://localhost:8000"]'
+    
+    @field_validator('ALLOWED_ORIGINS', mode='before')
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        """Parse ALLOWED_ORIGINS from string or list."""
+        if isinstance(v, str):
+            try:
+                # Try to parse as JSON array
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # If not JSON, split by comma
+                return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
 
     # Database
     DATABASE_URL: str
@@ -27,61 +41,39 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
+    # Stream Health Check
+    HEALTH_CHECK_TIMEOUT: int = 10
+    HEALTH_CHECK_CONCURRENT: int = 50
+    VERIFY_SSL: bool = False  # Many IPTV providers use self-signed certs
+
     # Output Directories
     OUTPUT_DIR: str = "/app/output"
     PLAYLISTS_DIR: str = "/app/output/playlists"
-    STRM_DIR: str = "/app/output/strm_files"
-    EPG_DIR: str = "/app/output/epg"
-
-    # Stream Health Check Settings
-    DEFAULT_HEALTH_CHECK_TIMEOUT: int = 10
-    DEFAULT_HEALTH_CHECK_SCHEDULE: str = "0 3 * * *"  # Daily at 3 AM
-    MAX_CONCURRENT_HEALTH_CHECKS: int = 50
-    VERIFY_SSL: bool = False  # Set to True in production with valid SSL certs
-
-    # Channel Matching Settings
-    DEFAULT_FUZZY_MATCH_THRESHOLD: int = 85
-    ENABLE_LOGO_MATCHING: bool = True
-    LOGO_MATCH_THRESHOLD: int = 90
-
-    # Quality Detection
-    ENABLE_BITRATE_ANALYSIS: bool = True
-    FFPROBE_TIMEOUT: int = 15
-
-    # Emby Integration
-    EMBY_HOST: Optional[str] = None
-    EMBY_API_KEY: Optional[str] = None
-    EMBY_LIBRARY_REFRESH: bool = True
-
-    # HDHomeRun Emulation
-    HDHR_PROXY_MODE: str = "direct"  # 'direct' or 'proxy'
-    HDHR_DEVICE_ID: str = "IPTV-MGR"
-    HDHR_TUNER_COUNT: int = 4
-    EXTERNAL_URL: Optional[str] = None  # External URL for HDHR discovery
-    API_PORT: int = 8000
+    VOD_DIR: str = "/app/output/vod"
+    STRM_DIR: str = "/app/output/strm"
 
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "/app/logs/app.log"
 
+    # HDHomeRun Emulation
+    HDHR_DEVICE_ID: str = "12345678"
+    HDHR_FRIENDLY_NAME: str = "IPTV Stream Manager"
+    HDHR_FIRMWARE_NAME: str = "hdhomerun_iptv"
+    HDHR_FIRMWARE_VERSION: str = "1.0.0"
+    HDHR_TUNER_COUNT: int = 6
+
+    # Provider Settings
+    MAX_PROVIDERS: int = 10
+    SYNC_INTERVAL: int = 3600  # 1 hour in seconds
+
+    # EPG Settings
+    EPG_REFRESH_INTERVAL: int = 86400  # 24 hours in seconds
+    EPG_DAYS: int = 7
+
     class Config:
         env_file = ".env"
-        case_sensitive = True
+        case_sensitive = False
 
 
 settings = Settings()
-
-
-# Ensure output directories exist (skip in CI/test environments)
-try:
-    for directory in [
-        settings.OUTPUT_DIR,
-        settings.PLAYLISTS_DIR,
-        settings.STRM_DIR,
-        settings.EPG_DIR,
-        os.path.dirname(settings.LOG_FILE)
-    ]:
-        os.makedirs(directory, exist_ok=True)
-except (PermissionError, OSError):
-    # In CI or restricted environments, directories will be created when needed
-    pass
