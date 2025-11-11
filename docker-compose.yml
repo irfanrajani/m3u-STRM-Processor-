@@ -40,9 +40,10 @@ services:
       - POSTGRES_DB=iptv_db
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
-      - BACKEND_PORT=${BACKEND_PORT:-8000}
+      - BACKEND_PORT=8000
     ports:
-      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
+      # Map external port (customizable) to internal port 8000
+      - "${EXTERNAL_PORT:-8000}:8000"
     volumes:
       - ./data:/app/data
     networks:
