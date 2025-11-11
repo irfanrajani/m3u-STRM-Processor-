@@ -4,9 +4,8 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      # Auto-generated secure password on first run
       POSTGRES_USER: iptv_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-auto_generated_$(openssl rand -hex 16)}
+      POSTGRES_PASSWORD: iptv_secure_pass_change_me
       POSTGRES_DB: iptv_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -21,9 +20,8 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD:-auto_generated_$(openssl rand -hex 16)}
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,17 +36,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      # Auto-generates .env on first run with secure defaults
-      # No manual configuration needed!
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     ports:
       - "8000:8000"
       - "3000:3000"
     volumes:
       - ./data:/app/data
-      - app_config:/app  # Persist auto-generated .env
     networks:
       - iptv-network
     restart: unless-stopped
@@ -61,6 +53,4 @@ networks:
 
 volumes:
   postgres_data:
-    driver: local
-  app_config:
     driver: local

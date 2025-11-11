@@ -64,6 +64,7 @@ app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
 app.include_router(epg.router, prefix="/api/epg", tags=["epg"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
+app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(hdhr.router, tags=["hdhr"])  # No prefix - HDHomeRun endpoints at root
 
 

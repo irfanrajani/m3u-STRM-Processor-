@@ -151,7 +151,7 @@ async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
     
     Modifies the .env file with new values.
     """
-    env_file = Path("/app/.env")
+    env_file = Path("/app/data/.env")  # Changed from /app/.env
     
     if not env_file.exists():
         raise HTTPException(status_code=500, detail=".env file not found")
@@ -203,7 +203,7 @@ async def rotate_secret_key() -> SecretKeyRotate:
     """
     new_key = generate_secret_key()
     
-    env_file = Path("/app/.env")
+    env_file = Path("/app/data/.env")  # Changed from /app/.env
     if env_file.exists():
         content = env_file.read_text()
         # Replace SECRET_KEY line

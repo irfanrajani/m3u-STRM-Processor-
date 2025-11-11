@@ -36,13 +36,14 @@ fi
 cd /app/backend 2>/dev/null || true
 
 # Check if this is first run
-if [ ! -f /app/.env ]; then
+if [ ! -f /app/data/.env ]; then
     echo ""
     echo "═══════════════════════════════════════════════════════════"
     echo "  🎉 FIRST RUN DETECTED - AUTO-CONFIGURING"
     echo "═══════════════════════════════════════════════════════════"
     echo ""
     echo "  A secure configuration has been auto-generated!"
+    echo "  Location: /app/data/.env"
     echo ""
     echo "  📱 Access the web interface:"
     echo "     http://localhost:3000"

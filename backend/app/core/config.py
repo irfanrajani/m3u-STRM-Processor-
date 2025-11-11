@@ -15,7 +15,7 @@ def generate_secret_key() -> str:
 
 def ensure_env_file():
     """Create .env file with secure defaults if it doesn't exist."""
-    env_file = Path("/app/.env")
+    env_file = Path("/app/data/.env")  # Changed from /app/.env to /app/data/.env
     
     if not env_file.exists():
         # Generate secure defaults
@@ -28,7 +28,7 @@ def ensure_env_file():
 SECRET_KEY={secret_key}
 
 # Database (auto-configured for Docker)
-DATABASE_URL=postgresql+asyncpg://iptv_user:iptv_pass@db:5432/iptv_db
+DATABASE_URL=postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db
 
 # Redis (auto-configured for Docker)
 REDIS_URL=redis://redis:6379/0
@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     EPG_DAYS: int = 7
 
     class Config:
-        env_file = ".env"
+        env_file = "/app/data/.env"  # Changed from .env to /app/data/.env
         case_sensitive = False
 
 
