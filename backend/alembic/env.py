@@ -12,8 +12,8 @@ config = context.config
 if config.config_file_name:
     fileConfig(config.config_file_name)
 
-from app.core.database import Base  # noqa: E402
-from app.core.config import settings  # noqa: E402
+from app.core.database import Base
+from app.core.config import settings
 
 target_metadata = Base.metadata
 

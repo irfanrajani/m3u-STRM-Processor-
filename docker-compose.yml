@@ -1,4 +1,36 @@
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_USER=iptv_user
+      - POSTGRES_PASSWORD=iptv_secure_pass_change_me
+      - POSTGRES_DB=iptv_db
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - BACKEND_PORT=8000
+      - DEBUG=false
+    volumes:
+      - app-data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   db:
     image: postgres:15-alpine
     environment:
@@ -6,56 +38,27 @@ services:
       POSTGRES_PASSWORD: iptv_secure_pass_change_me
       POSTGRES_DB: iptv_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U iptv_user -d iptv_db"]
+      test: ["CMD-SHELL", "pg_isready -U iptv_user"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - iptv-network
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - iptv-network
-    restart: unless-stopped
-
-  backend:
-    image: ghcr.io/irfanrajani/m3u-strm-processor:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      - POSTGRES_USER=iptv_user
-      - POSTGRES_PASSWORD=iptv_secure_pass_change_me
-      - POSTGRES_DB=iptv_db
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - BACKEND_PORT=8000
-    ports:
-      # Map external port (customizable) to internal port 8000
-      - "${EXTERNAL_PORT:-8000}:8000"
-    volumes:
-      - ./data:/app/data
-    networks:
-      - iptv-network
-    restart: unless-stopped
-    labels:
-      - "com.iptv.description=IPTV Stream Manager - Auto-configured"
-
-networks:
-  iptv-network:
-    driver: bridge
 
 volumes:
-  postgres_data:
-    driver: local
+  postgres-data:
+  app-data:

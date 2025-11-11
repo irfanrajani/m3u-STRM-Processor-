@@ -103,6 +103,37 @@ output/
       └── CNN.strm
 ```
 
+## Current Architecture
+- Single container: FastAPI backend + static compiled frontend served on port 8000.
+- API base path: http://localhost:8000/api
+- Docs: http://localhost:8000/docs
+- STRM output directory inside container: /app/output (config OUTPUT_DIR).
+
+## New Endpoint
+POST /api/process-m3u/
+Request body:
+```json
+{
+  "m3u_url": "https://example.com/playlist.m3u",
+  "output_path": "channels",
+  "merge_duplicates": true,
+  "prefer_quality": "best",
+  "organize_by_category": false,
+  "fuzzy_match_threshold": 0.85,
+  "clean_output_first": false
+}
+```
+Response:
+```json
+{
+  "message": "Successfully created N STRM files (merged from M original entries)",
+  "channels_created": N,
+  "duplicates_removed": D,
+  "categories_used": C,
+  "output_dir": "/app/output/channels"
+}
+```
+
 ## ⚙️ Configuration Options
 
 ### Merge Duplicates
