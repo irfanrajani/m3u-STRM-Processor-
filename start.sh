@@ -1,81 +1,49 @@
 #!/bin/bash
 
-# IPTV Stream Manager - Quick Start Script
+# IPTV Stream Manager - Easy Setup Script
+# Just run: ./start.sh
 
-set -e
-
-echo "======================================"
-echo "IPTV Stream Manager - Quick Start"
-echo "======================================"
-echo ""
-
-# Check if Docker is installed
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker is not installed. Please install Docker first."
-    echo "Visit: https://docs.docker.com/get-docker/"
-    exit 1
-fi
-
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose is not installed. Please install Docker Compose first."
-    echo "Visit: https://docs.docker.com/compose/install/"
-    exit 1
-fi
-
-echo "✅ Docker and Docker Compose are installed"
-echo ""
+echo "🚀 Starting IPTV Stream Manager..."
 
 # Create .env if it doesn't exist
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file..."
-    cp .env.example .env 2>/dev/null || echo "Warning: .env.example not found, using defaults"
+    echo "📝 Creating .env file from template..."
+    cp .env.example .env
+    echo "✅ .env file created"
 fi
 
-# Create output directories
-echo "📁 Creating output directories..."
-mkdir -p output/{playlists,strm_files,epg}
-mkdir -p logs
+# Create directories
+echo "📁 Creating directories..."
+mkdir -p output logs data
 
-echo "✅ Directories created"
-echo ""
-
-# Start Docker Compose
-echo "🚀 Starting services..."
-echo "This may take a few minutes on first run..."
-echo ""
-
+# Start services
+echo "🐳 Starting Docker containers..."
 docker-compose up -d
 
-echo ""
-echo "⏳ Waiting for services to be ready..."
-sleep 10
+# Wait for database to be ready
+echo "⏳ Waiting for database..."
+sleep 5
 
-# Check service health
-echo ""
-echo "🔍 Checking service status..."
-docker-compose ps
+# Run migrations
+echo "🗄️  Running database migrations..."
+docker-compose exec -T backend alembic upgrade head
+
+# Initialize database
+echo "👤 Creating admin user..."
+docker-compose exec -T backend python -m app.cli.init_db
 
 echo ""
-echo "======================================"
-echo "✅ IPTV Stream Manager is starting!"
-echo "======================================"
+echo "✅ IPTV Stream Manager is ready!"
 echo ""
-echo "📍 Web Interface: http://localhost:8080"
-echo "📍 API Documentation: http://localhost:8080/docs"
+echo "🌐 Open http://localhost:8080"
+echo "👤 Login: admin / admin (change this!)"
 echo ""
-echo "📖 Next steps:"
-echo "  1. Open http://localhost:8080 in your browser"
-echo "  2. Add your IPTV providers"
-echo "  3. Click 'Sync' to fetch channels"
+echo "📋 Next steps:"
+echo "   1. Go to Providers and add your IPTV sources"
+echo "   2. Click 'Sync' to import channels"
+echo "   3. Enjoy merged, quality-prioritized streams!"
 echo ""
-echo "📚 For detailed instructions, see:"
-echo "  - TESTING.md (test with your providers)"
-echo "  - USAGE.md (full usage guide)"
-echo "  - INSTALLATION.md (installation details)"
-echo ""
-echo "🔧 Useful commands:"
-echo "  - View logs: docker-compose logs -f"
-echo "  - Stop services: docker-compose down"
-echo "  - Restart: docker-compose restart"
-echo ""
+echo "🛠️  Useful commands:"
+echo "   docker-compose logs -f        # View logs"
+echo "   docker-compose restart        # Restart services"
+echo "   docker-compose down           # Stop everything"

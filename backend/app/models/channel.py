@@ -94,4 +94,7 @@ class ChannelStream(Base):
     provider = relationship("Provider", back_populates="streams")
 
     def __repr__(self):
-        return f"<ChannelStream(id={self.id}, channel_id={self.channel_id}, resolution='{self.resolution}', active={self.is_active})>"
+        return (
+            f"<ChannelStream(id={self.id}, channel_id={self.channel_id}, "
+            f"resolution='{self.resolution}', active={self.is_active})>"
+        )

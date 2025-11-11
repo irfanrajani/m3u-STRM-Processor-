@@ -24,7 +24,11 @@ def upgrade() -> None:
     user_role_enum.create(op.get_bind(), checkfirst=True)
 
     # Add role column to users table
-    op.add_column('users', sa.Column('role', sa.Enum('admin', 'viewer', name='userrole'), nullable=False, server_default='viewer'))
+    op.add_column(
+        'users',
+        sa.Column('role', sa.Enum('admin', 'viewer', name='userrole'),
+                  nullable=False, server_default='viewer')
+    )
 
     # Create user_favorites table
     op.create_table('user_favorites',
