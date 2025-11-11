@@ -98,6 +98,7 @@ class Settings(BaseSettings):
     PLAYLISTS_DIR: str = "/app/output/playlists"
     VOD_DIR: str = "/app/output/vod"
     STRM_DIR: str = "/app/output/strm"
+    EPG_DIR: str = "/app/output/epg"  # Add missing EPG_DIR
 
     # Logging
     LOG_LEVEL: str = "INFO"
@@ -109,6 +110,7 @@ class Settings(BaseSettings):
     HDHR_FIRMWARE_NAME: str = "hdhomerun_iptv"
     HDHR_FIRMWARE_VERSION: str = "1.0.0"
     HDHR_TUNER_COUNT: int = 6
+    HDHR_PROXY_MODE: str = "direct"  # Add missing HDHR_PROXY_MODE
 
     # Provider Settings
     MAX_PROVIDERS: int = 10
