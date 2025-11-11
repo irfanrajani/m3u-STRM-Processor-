@@ -15,14 +15,14 @@ def generate_secret_key() -> str:
 
 def ensure_env_file():
     """Create .env file with secure defaults if it doesn't exist."""
-    env_file = Path("/app/data/.env")  # Changed from /app/.env to /app/data/.env
+    env_file = Path("/app/data/.env")
     
     if not env_file.exists():
         # Generate secure defaults
         secret_key = generate_secret_key()
         
         env_content = f"""# Auto-generated configuration
-# You can modify these values through the web interface at http://localhost:3000/settings
+# You can modify these values through the web interface at http://localhost:3001/settings
 
 # Security
 SECRET_KEY={secret_key}
@@ -37,7 +37,11 @@ CELERY_RESULT_BACKEND=redis://redis:6379/0
 
 # Application
 DEBUG=false
-ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+ALLOWED_ORIGINS=["http://localhost:3001","http://localhost:8000"]
+
+# Ports
+BACKEND_PORT=8000
+FRONTEND_PORT=3001
 """
         
         env_file.parent.mkdir(parents=True, exist_ok=True)
@@ -52,8 +56,12 @@ class Settings(BaseSettings):
     APP_NAME: str = "IPTV Stream Manager"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    SECRET_KEY: str = generate_secret_key()  # Auto-generate if not provided
-    ALLOWED_ORIGINS: Union[List[str], str] = '["http://localhost:3000","http://localhost:8000"]'
+    SECRET_KEY: str = generate_secret_key()
+    ALLOWED_ORIGINS: Union[List[str], str] = '["http://localhost:3001","http://localhost:8000"]'
+    
+    # Ports
+    BACKEND_PORT: int = 8000
+    FRONTEND_PORT: int = 3001
     
     @field_validator('ALLOWED_ORIGINS', mode='before')
     @classmethod
@@ -69,7 +77,7 @@ class Settings(BaseSettings):
         return v
 
     # Database - auto-configured for Docker
-    DATABASE_URL: str = "postgresql+asyncpg://iptv_user:iptv_pass@db:5432/iptv_db"
+    DATABASE_URL: str = "postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db"
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 40
 
@@ -111,7 +119,7 @@ class Settings(BaseSettings):
     EPG_DAYS: int = 7
 
     class Config:
-        env_file = "/app/data/.env"  # Changed from .env to /app/data/.env
+        env_file = "/app/data/.env"
         case_sensitive = False
 
 
