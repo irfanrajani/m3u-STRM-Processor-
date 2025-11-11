@@ -112,21 +112,31 @@ jobs:
         ## 📦 Pull Image (Recommended)
         ```bash
         docker pull ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
-        docker run -d -p 8000:8000 -p 3001:3001 \
+        # Default port 8000 (serves API + Web UI)
+        docker run -d -p 8000:8000 \
           --name iptv-stream-manager \
           -e SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \
           ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
         ```
         
+        ## 🌐 Access
+        - Web UI: http://localhost:8000
+        - API Docs (Swagger): http://localhost:8000/docs
+        - Health: http://localhost:8000/api/health
+        
+        ## 🔄 Custom External Port Example (serve on :8080)
+        ```bash
+        docker run -d -p 8080:8000 --name iptv-stream-manager \
+          -e SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \
+          ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
+        # UI + API: http://localhost:8080
+        ```
+        
         ## 🗂 Offline (Docker archive)
         ```bash
         gunzip -c ${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-docker.tar.gz | docker load
-        docker run -d -p 8000:8000 -p 3001:3001 iptv-stream-manager:${{ steps.version.outputs.version }}
+        docker run -d -p 8000:8000 iptv-stream-manager:${{ steps.version.outputs.version }}
         ```
-        
-        ## 🖥 Ports
-        - Backend API: http://localhost:8000
-        - Frontend UI: http://localhost:3001
         
         ## ✅ Verify
         ```bash
