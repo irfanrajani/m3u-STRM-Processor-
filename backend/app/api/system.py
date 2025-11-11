@@ -113,6 +113,8 @@ class ConfigUpdate(BaseModel):
     allowed_origins: List[str] = None
     health_check_timeout: int = None
     sync_interval: int = None
+    frontend_port: int = None
+    backend_port: int = None
 
 
 class SecretKeyRotate(BaseModel):
@@ -179,6 +181,10 @@ async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
                 updated_lines.append(f'HEALTH_CHECK_TIMEOUT={config.health_check_timeout}')
             elif config.sync_interval is not None and key == 'SYNC_INTERVAL':
                 updated_lines.append(f'SYNC_INTERVAL={config.sync_interval}')
+            elif config.frontend_port is not None and key == 'FRONTEND_PORT':
+                updated_lines.append(f'FRONTEND_PORT={config.frontend_port}')
+            elif config.backend_port is not None and key == 'BACKEND_PORT':
+                updated_lines.append(f'BACKEND_PORT={config.backend_port}')
             else:
                 updated_lines.append(line)
         else:
@@ -187,8 +193,12 @@ async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
     # Write updated .env
     env_file.write_text('\n'.join(updated_lines))
     
+    restart_note = ""
+    if config.frontend_port is not None or config.backend_port is not None:
+        restart_note = " Port changes require: docker-compose down && docker-compose up -d"
+    
     return {
-        "message": "Configuration updated successfully. Restart required for changes to take effect.",
+        "message": f"Configuration updated successfully.{restart_note}",
         "restart_command": "docker-compose restart backend"
     }
 

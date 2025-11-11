@@ -36,9 +36,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    environment:
+      - BACKEND_PORT=${BACKEND_PORT:-8000}
+      - FRONTEND_PORT=${FRONTEND_PORT:-3001}
     ports:
-      - "8000:8000"
-      - "3000:3000"
+      - "${BACKEND_PORT:-8000}:8000"
+      - "${FRONTEND_PORT:-3001}:3000"
     volumes:
       - ./data:/app/data
     networks:
