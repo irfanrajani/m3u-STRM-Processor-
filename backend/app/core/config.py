@@ -18,7 +18,6 @@ def ensure_env_file():
     env_file = Path("/app/data/.env")
     
     if not env_file.exists():
-        # Generate secure defaults
         secret_key = generate_secret_key()
         
         env_content = f"""# Auto-generated configuration
@@ -69,19 +68,17 @@ class Settings(BaseSettings):
         """Parse ALLOWED_ORIGINS from string or list."""
         if isinstance(v, str):
             try:
-                # Try to parse as JSON array
                 return json.loads(v)
             except json.JSONDecodeError:
-                # If not JSON, split by comma
                 return [origin.strip() for origin in v.split(',') if origin.strip()]
         return v
 
-    # Database - auto-configured for Docker
+    # Database
     DATABASE_URL: str = "postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db"
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 40
 
-    # Redis - auto-configured for Docker
+    # Redis
     REDIS_URL: str = "redis://redis:6379/0"
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
@@ -89,14 +86,14 @@ class Settings(BaseSettings):
     # Stream Health Check
     HEALTH_CHECK_TIMEOUT: int = 10
     HEALTH_CHECK_CONCURRENT: int = 50
-    VERIFY_SSL: bool = False  # Many IPTV providers use self-signed certs
+    VERIFY_SSL: bool = False
 
     # Output Directories
     OUTPUT_DIR: str = "/app/output"
     PLAYLISTS_DIR: str = "/app/output/playlists"
     VOD_DIR: str = "/app/output/vod"
     STRM_DIR: str = "/app/output/strm"
-    EPG_DIR: str = "/app/output/epg"  # Add missing EPG_DIR
+    EPG_DIR: str = "/app/output/epg"
 
     # Logging
     LOG_LEVEL: str = "INFO"
@@ -108,14 +105,14 @@ class Settings(BaseSettings):
     HDHR_FIRMWARE_NAME: str = "hdhomerun_iptv"
     HDHR_FIRMWARE_VERSION: str = "1.0.0"
     HDHR_TUNER_COUNT: int = 6
-    HDHR_PROXY_MODE: str = "direct"  # Add missing HDHR_PROXY_MODE
+    HDHR_PROXY_MODE: str = "direct"
 
     # Provider Settings
     MAX_PROVIDERS: int = 10
-    SYNC_INTERVAL: int = 3600  # 1 hour in seconds
+    SYNC_INTERVAL: int = 3600
 
     # EPG Settings
-    EPG_REFRESH_INTERVAL: int = 86400  # 24 hours in seconds
+    EPG_REFRESH_INTERVAL: int = 86400
     EPG_DAYS: int = 7
 
     class Config:
@@ -123,7 +120,5 @@ class Settings(BaseSettings):
         case_sensitive = False
 
 
-# Ensure .env exists with secure defaults
 ensure_env_file()
-
 settings = Settings()

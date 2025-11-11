@@ -11,7 +11,7 @@ RUN npm run build
 FROM python:3.11-slim
 WORKDIR /app
 
-# Install system dependencies including FFmpeg
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     netcat-openbsd \
@@ -22,21 +22,24 @@ RUN apt-get update && apt-get install -y \
 COPY backend/ ./backend/
 
 # Install Python dependencies
-WORKDIR /app/backend
+COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy built frontend from build-stage
-COPY --from=build-stage /app/iptv-stream-manager-frontend/dist /app/frontend/dist
+# Copy frontend build
+COPY --from=build-stage /app/iptv-stream-manager-frontend/dist ./frontend/dist
 
-# Copy entrypoint script
-COPY backend/docker-entrypoint.sh /app/backend/
-RUN chmod +x /app/backend/docker-entrypoint.sh
+# Create necessary directories
+RUN mkdir -p /app/data /app/output /app/logs && \
+    chmod -R 755 /app/data /app/output /app/logs
+
+# Copy entrypoint
+COPY backend/docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 # Expose ports
 EXPOSE 8000 3000
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
+# Set working directory to backend
+WORKDIR /app/backend
 
-# Use entrypoint script
-ENTRYPOINT ["/app/backend/docker-entrypoint.sh"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
