@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, and_
+from sqlalchemy import select, func, desc
 from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from app.core.database import get_db

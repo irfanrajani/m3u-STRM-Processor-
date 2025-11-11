@@ -52,6 +52,7 @@ class StreamHealthChecker:
             start_time = time.time()
 
             try:
+                from app.core.config import settings
                 async with httpx.AsyncClient(
                     timeout=self.timeout,
                     follow_redirects=True,
