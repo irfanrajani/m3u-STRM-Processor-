@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  m3u-strm-processor:
+    image: ghcr.io/irfanrajani/m3u-strm-processor:latest
+    container_name: m3u-strm-processor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /share/CACHEDEV1_DATA/m3u-output:/output
+    restart: unless-stopped

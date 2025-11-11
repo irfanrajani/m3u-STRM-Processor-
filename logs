@@ -1,0 +1,233 @@
+db-1  | The files belonging to this database system will be owned by user "postgres".
+db-1  | This user must also own the server process.
+db-1  | 
+db-1  | The database cluster will be initialized with locale "en_US.utf8".
+db-1  | The default database encoding has accordingly been set to "UTF8".
+db-1  | The default text search configuration will be set to "english".
+db-1  | 
+db-1  | Data page checksums are disabled.
+db-1  | 
+db-1  | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+db-1  | creating subdirectories ... ok
+db-1  | selecting dynamic shared memory implementation ... posix
+db-1  | selecting default max_connections ... 100
+db-1  | selecting default shared_buffers ... 128MB
+db-1  | selecting default time zone ... UTC
+db-1  | creating configuration files ... ok
+db-1  | running bootstrap script ... ok
+db-1  | sh: locale: not found
+db-1  | 2025-11-11 01:12:30.435 UTC [35] WARNING:  no usable system locales were found
+db-1  | performing post-bootstrap initialization ... ok
+db-1  | syncing data to disk ... ok
+db-1  | 
+db-1  | 
+db-1  | Success. You can now start the database server using:
+db-1  | 
+db-1  |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+db-1  | 
+db-1  | initdb: warning: enabling "trust" authentication for local connections
+db-1  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+db-1  | waiting for server to start....2025-11-11 01:12:30.780 UTC [41] LOG:  starting PostgreSQL 15.14 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+db-1  | 2025-11-11 01:12:30.781 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db-1  | 2025-11-11 01:12:30.782 UTC [44] LOG:  database system was shut down at 2025-11-11 01:12:30 UTC
+db-1  | 2025-11-11 01:12:30.784 UTC [41] LOG:  database system is ready to accept connections
+db-1  |  done
+db-1  | server started
+db-1  | CREATE DATABASE
+db-1  | 
+db-1  | 
+db-1  | /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+db-1  | 
+db-1  | waiting for server to shut down....2025-11-11 01:12:30.910 UTC [41] LOG:  received fast shutdown request
+db-1  | 2025-11-11 01:12:30.912 UTC [41] LOG:  aborting any active transactions
+db-1  | 2025-11-11 01:12:30.913 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+db-1  | 2025-11-11 01:12:30.913 UTC [42] LOG:  shutting down
+db-1  | 2025-11-11 01:12:30.914 UTC [42] LOG:  checkpoint starting: shutdown immediate
+db-1  | 2025-11-11 01:12:30.954 UTC [42] LOG:  checkpoint complete: wrote 921 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.013 s, sync=0.026 s, total=0.041 s; sync files=301, longest=0.013 s, average=0.001 s; distance=4238 kB, estimate=4238 kB
+db-1  | 2025-11-11 01:12:30.956 UTC [41] LOG:  database system is shut down
+db-1  |  done
+db-1  | server stopped
+db-1  | 
+db-1  | PostgreSQL init process complete; ready for start up.
+db-1  | 
+db-1  | 2025-11-11 01:12:31.027 UTC [1] LOG:  starting PostgreSQL 15.14 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+db-1  | 2025-11-11 01:12:31.027 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+db-1  | 2025-11-11 01:12:31.027 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+db-1  | 2025-11-11 01:12:31.028 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db-1  | 2025-11-11 01:12:31.030 UTC [57] LOG:  database system was shut down at 2025-11-11 01:12:30 UTC
+db-1  | 2025-11-11 01:12:31.033 UTC [1] LOG:  database system is ready to accept connections
+db-1  | 2025-11-11 01:12:40.170 UTC [67] FATAL:  database "iptv_user" does not exist
+db-1  | 2025-11-11 01:12:50.214 UTC [75] FATAL:  database "iptv_user" does not exist
+db-1  | 2025-11-11 01:13:00.251 UTC [81] FATAL:  database "iptv_user" does not exist
+db-1  | 2025-11-11 01:13:10.287 UTC [89] FATAL:  database "iptv_user" does not exist
+db-1  | 2025-11-11 01:13:20.331 UTC [96] FATAL:  database "iptv_user" does not exist
+redis-1  | 1:C 11 Nov 2025 01:12:30.150 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+redis-1  | 1:C 11 Nov 2025 01:12:30.150 * Redis version=7.4.7, bits=64, commit=00000000, modified=0, pid=1, just started
+redis-1  | 1:C 11 Nov 2025 01:12:30.150 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+redis-1  | 1:M 11 Nov 2025 01:12:30.151 * monotonic clock: POSIX clock_gettime
+redis-1  | 1:M 11 Nov 2025 01:12:30.151 * Running mode=standalone, port=6379.
+redis-1  | 1:M 11 Nov 2025 01:12:30.152 * Server initialized
+redis-1  | 1:M 11 Nov 2025 01:12:30.152 * Ready to accept connections tcp
+backend-1  | Starting IPTV Stream Manager Backend...
+backend-1  | Waiting for database at db:5432...
+backend-1  | Connection to db (172.18.0.2) 5432 port [tcp/postgresql] succeeded!
+backend-1  | Waiting for Redis at redis:6379...
+backend-1  | Connection to redis (172.18.0.3) 6379 port [tcp/redis] succeeded!
+backend-1  | Running database migrations...
+backend-1  | Traceback (most recent call last):
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 252, in __call__
+backend-1  |     field_value = self.prepare_field_value(field_name, field, field_value, value_is_complex)
+backend-1  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 435, in prepare_field_value
+backend-1  |     raise e
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 432, in prepare_field_value
+backend-1  |     value = self.decode_complex_value(field_name, field, value)
+backend-1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 103, in decode_complex_value
+backend-1  |     return json.loads(value)
+backend-1  |            ^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/json/__init__.py", line 346, in loads
+backend-1  |     return _default_decoder.decode(s)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/json/decoder.py", line 337, in decode
+backend-1  |     obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+backend-1  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/json/decoder.py", line 355, in raw_decode
+backend-1  |     raise JSONDecodeError("Expecting value", s, err.value) from None
+backend-1  | json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+backend-1  | 
+backend-1  | The above exception was the direct cause of the following exception:
+backend-1  | 
+backend-1  | Traceback (most recent call last):
+backend-1  |   File "/usr/local/bin/alembic", line 8, in <module>
+backend-1  |     sys.exit(main())
+backend-1  |              ^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 630, in main
+backend-1  |     CommandLine(prog=prog).main(argv=argv)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 624, in main
+backend-1  |     self.run_cmd(cfg, options)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 601, in run_cmd
+backend-1  |     fn(
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 398, in upgrade
+backend-1  |     script.run_env()
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 579, in run_env
+backend-1  |     util.load_python_file(self.dir, "env.py")
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 93, in load_python_file
+backend-1  |     module = load_module_py(module_id, path)
+backend-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 109, in load_module_py
+backend-1  |     spec.loader.exec_module(module)  # type: ignore
+backend-1  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+backend-1  |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+backend-1  |   File "/app/backend/alembic/env.py", line 15, in <module>
+backend-1  |     from app.core.database import Base
+backend-1  |   File "/app/backend/app/core/database.py", line 6, in <module>
+backend-1  |     from app.core.config import settings
+backend-1  |   File "/app/backend/app/core/config.py", line 72, in <module>
+backend-1  |     settings = Settings()
+backend-1  |                ^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/main.py", line 72, in __init__
+backend-1  |     **__pydantic_self__._settings_build_values(
+backend-1  |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/main.py", line 160, in _settings_build_values
+backend-1  |     return deep_update(*reversed([source() for source in sources]))
+backend-1  |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/main.py", line 160, in <listcomp>
+backend-1  |     return deep_update(*reversed([source() for source in sources]))
+backend-1  |                                   ^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 254, in __call__
+backend-1  |     raise SettingsError(
+backend-1  | pydantic_settings.sources.SettingsError: error parsing value for field "ALLOWED_ORIGINS" from source "EnvSettingsSource"
+backend-1  | Warning: Alembic upgrade failed.
+backend-1  | Traceback (most recent call last):
+backend-1  |   File "<stdin>", line 1, in <module>
+backend-1  | ModuleNotFoundError: No module named 'app.database'
+backend-1  | Traceback (most recent call last):
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 252, in __call__
+backend-1  |     field_value = self.prepare_field_value(field_name, field, field_value, value_is_complex)
+backend-1  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 435, in prepare_field_value
+backend-1  |     raise e
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 432, in prepare_field_value
+backend-1  |     value = self.decode_complex_value(field_name, field, value)
+backend-1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 103, in decode_complex_value
+backend-1  |     return json.loads(value)
+backend-1  |            ^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/json/__init__.py", line 346, in loads
+backend-1  |     return _default_decoder.decode(s)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/json/decoder.py", line 337, in decode
+backend-1  |     obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+backend-1  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/json/decoder.py", line 355, in raw_decode
+backend-1  |     raise JSONDecodeError("Expecting value", s, err.value) from None
+backend-1  | json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+backend-1  | 
+backend-1  | The above exception was the direct cause of the following exception:
+backend-1  | 
+backend-1  | Traceback (most recent call last):
+backend-1  |   File "/usr/local/bin/uvicorn", line 8, in <module>
+backend-1  |     sys.exit(main())
+backend-1  |              ^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1462, in __call__
+backend-1  |     return self.main(*args, **kwargs)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1383, in main
+backend-1  |     rv = self.invoke(ctx)
+backend-1  |          ^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1246, in invoke
+backend-1  |     return ctx.invoke(self.callback, **ctx.params)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/click/core.py", line 814, in invoke
+backend-1  |     return callback(*args, **kwargs)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 416, in main
+backend-1  |     run(
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 587, in run
+backend-1  |     server.run()
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 61, in run
+backend-1  |     return asyncio.run(self.serve(sockets=sockets))
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+backend-1  |     return runner.run(main)
+backend-1  |            ^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+backend-1  |     return self._loop.run_until_complete(task)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 68, in serve
+backend-1  |     config.load()
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 467, in load
+backend-1  |     self.loaded_app = import_from_string(self.app)
+backend-1  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 21, in import_from_string
+backend-1  |     module = importlib.import_module(module_str)
+backend-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+backend-1  |     return _bootstrap._gcd_import(name[level:], package, level)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+backend-1  |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+backend-1  |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+backend-1  |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+backend-1  |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+backend-1  |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+backend-1  |   File "/app/backend/app/main.py", line 6, in <module>
+backend-1  |     from app.core.config import settings
+backend-1  |   File "/app/backend/app/core/config.py", line 72, in <module>
+backend-1  |     settings = Settings()
+backend-1  |                ^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/main.py", line 72, in __init__
+backend-1  |     **__pydantic_self__._settings_build_values(
+backend-1  |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/main.py", line 160, in _settings_build_values
+backend-1  |     return deep_update(*reversed([source() for source in sources]))
+backend-1  |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/main.py", line 160, in <listcomp>
+backend-1  |     return deep_update(*reversed([source() for source in sources]))
+backend-1  |                                   ^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/pydantic_settings/sources.py", line 254, in __call__
+backend-1  |     raise SettingsError(
+backend-1  | pydantic_settings.sources.SettingsError: error parsing value for field "ALLOWED_ORIGINS" from source "EnvSettingsSource"

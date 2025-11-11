@@ -74,7 +74,7 @@ app.add_exception_handler(Exception, generic_exception_handler)
 # This is safe because the app runs on your local network
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Self-hosted app, safe for local network
+    allow_origins=settings.ALLOWED_ORIGINS if not settings.DEBUG else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -92,6 +92,7 @@ app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
 app.include_router(epg.router, prefix="/api/epg", tags=["epg"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
+app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(hdhr.router, tags=["hdhr"])  # No prefix - HDHomeRun endpoints at root
 
 

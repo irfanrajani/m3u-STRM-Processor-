@@ -5,6 +5,7 @@ import time
 from typing import Dict, List, Optional
 from datetime import datetime
 import httpx
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class StreamHealthChecker:
                 async with httpx.AsyncClient(
                     timeout=self.timeout,
                     follow_redirects=True,
-                    verify=settings.VERIFY_SSL  # Configurable - IPTV streams often have SSL issues
+                    verify=settings.VERIFY_SSL
                 ) as client:
                     # Try HEAD request first (faster)
                     if method == "head":
@@ -176,7 +177,6 @@ class StreamHealthChecker:
             True if stream is accessible
         """
         try:
-            from app.core.config import settings
             async with httpx.AsyncClient(timeout=timeout, verify=settings.VERIFY_SSL) as client:
                 response = await client.head(stream_url, follow_redirects=True)
                 return response.status_code in [200, 206, 302, 301]

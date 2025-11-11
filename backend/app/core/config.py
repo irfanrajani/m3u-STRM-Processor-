@@ -1,9 +1,52 @@
 """Application configuration."""
 from pydantic_settings import BaseSettings
-from typing import Optional
+from pydantic import field_validator
+from typing import Optional, List, Union
 import os
+import json
 import secrets
 from pathlib import Path
+
+
+def generate_secret_key() -> str:
+    """Generate a secure random secret key."""
+    return secrets.token_urlsafe(32)
+
+
+def ensure_env_file():
+    """Create .env file with secure defaults if it doesn't exist."""
+    env_file = Path("/app/data/.env")
+    
+    if not env_file.exists():
+        # Generate secure defaults
+        secret_key = generate_secret_key()
+        
+        env_content = f"""# Auto-generated configuration
+# You can modify these values through the web interface at http://localhost:3001/settings
+
+# Security
+SECRET_KEY={secret_key}
+
+# Database (auto-configured for Docker)
+DATABASE_URL=postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db
+
+# Redis (auto-configured for Docker)
+REDIS_URL=redis://redis:6379/0
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+# Application
+DEBUG=false
+ALLOWED_ORIGINS=["http://localhost:3001","http://localhost:8000"]
+
+# Ports
+BACKEND_PORT=8000
+FRONTEND_PORT=3001
+"""
+        
+        env_file.parent.mkdir(parents=True, exist_ok=True)
+        env_file.write_text(env_content)
+        print(f"✅ Auto-generated secure configuration at {env_file}")
 
 
 class Settings(BaseSettings):
@@ -13,90 +56,76 @@ class Settings(BaseSettings):
     APP_NAME: str = "IPTV Stream Manager"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
+    SECRET_KEY: str = generate_secret_key()
+    ALLOWED_ORIGINS: Union[List[str], str] = '["http://localhost:3001","http://localhost:8000"]'
+    
+    # Ports
+    BACKEND_PORT: int = 8000
+    FRONTEND_PORT: int = 3001
+    
+    @field_validator('ALLOWED_ORIGINS', mode='before')
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        """Parse ALLOWED_ORIGINS from string or list."""
+        if isinstance(v, str):
+            try:
+                # Try to parse as JSON array
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # If not JSON, split by comma
+                return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
 
-    # Secret key - auto-generate and persist
-    _SECRET_KEY_FILE: Path = Path("/app/data/secret.key")
-
-    @property
-    def SECRET_KEY(self) -> str:
-        """Auto-generate and persist secret key."""
-        # Try to load existing key
-        if self._SECRET_KEY_FILE.exists():
-            return self._SECRET_KEY_FILE.read_text().strip()
-
-        # Generate new key and save it
-        new_key = secrets.token_urlsafe(32)
-        self._SECRET_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
-        self._SECRET_KEY_FILE.write_text(new_key)
-        return new_key
-
-    # Database
-    DATABASE_URL: str
+    # Database - auto-configured for Docker
+    DATABASE_URL: str = "postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db"
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 40
 
-    # Redis
-    REDIS_URL: str
+    # Redis - auto-configured for Docker
+    REDIS_URL: str = "redis://redis:6379/0"
 
-    # Celery
-    CELERY_BROKER_URL: str
-    CELERY_RESULT_BACKEND: str
+    # Celery - auto-configured for Docker
+    CELERY_BROKER_URL: str = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
+
+    # Stream Health Check
+    HEALTH_CHECK_TIMEOUT: int = 10
+    HEALTH_CHECK_CONCURRENT: int = 50
+    VERIFY_SSL: bool = False  # Many IPTV providers use self-signed certs
 
     # Output Directories
     OUTPUT_DIR: str = "/app/output"
     PLAYLISTS_DIR: str = "/app/output/playlists"
-    STRM_DIR: str = "/app/output/strm_files"
-    EPG_DIR: str = "/app/output/epg"
-
-    # Stream Health Check Settings
-    DEFAULT_HEALTH_CHECK_TIMEOUT: int = 10
-    DEFAULT_HEALTH_CHECK_SCHEDULE: str = "0 3 * * *"  # Daily at 3 AM
-    MAX_CONCURRENT_HEALTH_CHECKS: int = 50
-    VERIFY_SSL: bool = False  # Most IPTV streams don't have valid SSL
-
-    # Channel Matching Settings
-    DEFAULT_FUZZY_MATCH_THRESHOLD: int = 85
-    ENABLE_LOGO_MATCHING: bool = True
-    LOGO_MATCH_THRESHOLD: int = 90
-
-    # Quality Detection
-    ENABLE_BITRATE_ANALYSIS: bool = True
-    FFPROBE_TIMEOUT: int = 15
-
-    # Emby Integration
-    EMBY_HOST: Optional[str] = None
-    EMBY_API_KEY: Optional[str] = None
-    EMBY_LIBRARY_REFRESH: bool = True
-
-    # HDHomeRun Emulation
-    HDHR_PROXY_MODE: str = "direct"  # 'direct' or 'proxy'
-    HDHR_DEVICE_ID: str = "IPTV-MGR"
-    HDHR_TUNER_COUNT: int = 4
-    EXTERNAL_URL: Optional[str] = None  # External URL for HDHR discovery
-    API_PORT: int = 8000
+    VOD_DIR: str = "/app/output/vod"
+    STRM_DIR: str = "/app/output/strm"
+    EPG_DIR: str = "/app/output/epg"  # Add missing EPG_DIR
 
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "/app/logs/app.log"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # HDHomeRun Emulation
+    HDHR_DEVICE_ID: str = "12345678"
+    HDHR_FRIENDLY_NAME: str = "IPTV Stream Manager"
+    HDHR_FIRMWARE_NAME: str = "hdhomerun_iptv"
+    HDHR_FIRMWARE_VERSION: str = "1.0.0"
+    HDHR_TUNER_COUNT: int = 6
+    HDHR_PROXY_MODE: str = "direct"  # Add missing HDHR_PROXY_MODE
 
+    # Provider Settings
+    MAX_PROVIDERS: int = 10
+    SYNC_INTERVAL: int = 3600  # 1 hour in seconds
+
+    # EPG Settings
+    EPG_REFRESH_INTERVAL: int = 86400  # 24 hours in seconds
+    EPG_DAYS: int = 7
+
+    class Config:
+        env_file = "/app/data/.env"
+        case_sensitive = False
+
+
+# Ensure .env exists with secure defaults
+ensure_env_file()
 
 settings = Settings()
-
-
-# Ensure output directories exist (skip in CI/test environments)
-try:
-    for directory in [
-        settings.OUTPUT_DIR,
-        settings.PLAYLISTS_DIR,
-        settings.STRM_DIR,
-        settings.EPG_DIR,
-        os.path.dirname(settings.LOG_FILE)
-    ]:
-        os.makedirs(directory, exist_ok=True)
-except (PermissionError, OSError):
-    # In CI or restricted environments, directories will be created when needed
-    pass
