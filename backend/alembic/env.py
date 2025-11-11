@@ -53,8 +53,8 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode."""
-    # Convert asyncpg URL to psycopg2 for Alembic
-    url = str(settings.DATABASE_URL).replace("+asyncpg", "")
+    # Use asyncpg for async migrations
+    url = str(settings.DATABASE_URL)
 
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = url

@@ -1,5 +1,6 @@
 """Main FastAPI application."""
 import logging
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,9 @@ from app.api import (
     settings as settings_router, auth, hdhr, system,
     users, favorites, analytics
 )
+
+# Ensure log directory exists
+Path(settings.LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
 
 # Configure logging
 logging.basicConfig(
