@@ -69,36 +69,58 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"]
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(hdhr.router, tags=["hdhr"])
 
-# Serve frontend static files
+
+@app.get("/api")
+async def api_root():
+    """API root endpoint."""
+    return {
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "status": "running",
+        "docs": "/docs",
+        "api_version": "v1"
+    }
+
+
+# Serve frontend static files - MUST BE LAST
 frontend_dist = Path("/app/frontend/dist")
 if frontend_dist.exists():
+    logger.info(f"Frontend found at {frontend_dist}")
     # Mount assets directory for static files
     assets_dir = frontend_dist / "assets"
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
     
-    @app.get("/{full_path:path}")
+    @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_frontend(full_path: str):
-        """Serve frontend SPA - catches all non-API routes."""
-        # Skip API routes
-        if full_path.startswith("api/"):
-            return {"error": "API endpoint not found"}
+        """Serve frontend SPA - catches all non-API routes. MUST BE REGISTERED LAST."""
+        # Explicitly exclude API routes, docs, and OpenAPI
+        excluded_prefixes = ("api/", "docs", "openapi.json", "redoc")
+        if any(full_path.startswith(prefix) for prefix in excluded_prefixes):
+            return {"error": "Not found", "path": full_path}
         
         # Try to serve specific file
-        file_path = frontend_dist / full_path
-        if file_path.exists() and file_path.is_file():
-            return FileResponse(str(file_path))
+        if full_path:
+            file_path = frontend_dist / full_path
+            if file_path.exists() and file_path.is_file():
+                return FileResponse(str(file_path))
         
         # Fallback to index.html for SPA routing
-        return FileResponse(str(frontend_dist / "index.html"))
-
-
-@app.get("/")
-async def root():
-    """Root endpoint - redirects to frontend."""
-    return FileResponse(str(frontend_dist / "index.html")) if frontend_dist.exists() else {
-        "name": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "status": "running",
-        "docs": "/docs",
-    }
+        index_path = frontend_dist / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+        
+        return {"error": "Frontend not found"}
+else:
+    logger.warning(f"Frontend not found at {frontend_dist} - serving API only")
+    
+    @app.get("/")
+    async def root():
+        """Root endpoint when frontend is not available."""
+        return {
+            "name": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "status": "running",
+            "docs": "/docs",
+            "note": "Frontend UI not available - API only mode"
+        }
