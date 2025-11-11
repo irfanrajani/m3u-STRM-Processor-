@@ -25,7 +25,7 @@ WORKDIR /app
 
 # System deps + dos2unix to fix line-ending issues
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ffmpeg curl ca-certificates netcat-openbsd dos2unix \
+      ffmpeg curl ca-certificates netcat-openbsd dos2unix nginx \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for layer caching

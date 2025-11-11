@@ -1,10 +1,13 @@
 """Main FastAPI application."""
 
 import logging
+import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.api import providers, channels, vod, epg, health, settings as settings_router, auth, hdhr, system, users, favorites, analytics
@@ -52,6 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include API routers
 app.include_router(health.router, prefix="/api/health", tags=["health"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -65,11 +69,34 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"]
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(hdhr.router, tags=["hdhr"])
 
+# Serve frontend static files
+frontend_dist = Path("/app/frontend/dist")
+if frontend_dist.exists():
+    # Mount assets directory for static files
+    assets_dir = frontend_dist / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+    
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        """Serve frontend SPA - catches all non-API routes."""
+        # Skip API routes
+        if full_path.startswith("api/"):
+            return {"error": "API endpoint not found"}
+        
+        # Try to serve specific file
+        file_path = frontend_dist / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        
+        # Fallback to index.html for SPA routing
+        return FileResponse(str(frontend_dist / "index.html"))
+
 
 @app.get("/")
 async def root():
-    """Root endpoint."""
-    return {
+    """Root endpoint - redirects to frontend."""
+    return FileResponse(str(frontend_dist / "index.html")) if frontend_dist.exists() else {
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "status": "running",

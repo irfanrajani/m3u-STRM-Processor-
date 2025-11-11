@@ -93,5 +93,14 @@ if command -v alembic >/dev/null 2>&1; then
   fi
 fi
 
-echo "✅ Launching Uvicorn on port 8000"
-exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Start nginx in background for frontend (port 3001)
+if command -v nginx >/dev/null 2>&1; then
+  echo "🌐 Starting Nginx on port 3001 for frontend..."
+  nginx
+fi
+
+# Get backend port from env (default 8000)
+BACKEND_PORT="${BACKEND_PORT:-8000}"
+
+echo "✅ Launching Uvicorn on port ${BACKEND_PORT}"
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port "${BACKEND_PORT}"
