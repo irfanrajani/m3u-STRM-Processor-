@@ -32,8 +32,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt ./backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
-# Copy backend source
-COPY backend/ ./backend/
+# Add this BEFORE copying backend code to bust cache
+ARG CACHEBUST=1
+
+# Copy backend code
+COPY backend/ /app/backend/
 
 # Copy built frontend
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
