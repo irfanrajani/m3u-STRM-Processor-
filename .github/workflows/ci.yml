@@ -119,6 +119,7 @@ jobs:
     - name: Install dependencies
       working-directory: ./frontend
       run: |
+        # Install all dependencies (including dev dependencies)
         if [ -f package-lock.json ]; then
           npm ci
         else
