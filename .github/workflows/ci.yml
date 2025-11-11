@@ -100,7 +100,7 @@ jobs:
       uses: codecov/codecov-action@v4
       continue-on-error: true
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ secrets.CODECOV_TOKEN || '' }}
         file: ./backend/coverage.xml
         flags: backend
         fail_ci_if_error: false
@@ -200,29 +200,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # New: ensure entrypoint exists so Dockerfile COPY doesn't fail
-    - name: Ensure backend/docker-entrypoint.sh exists
-      run: |
-        if [ ! -f backend/docker-entrypoint.sh ]; then
-          echo "Creating backend/docker-entrypoint.sh fallback..."
-          mkdir -p backend
-          cat > backend/docker-entrypoint.sh << 'EOF'
-          #!/usr/bin/env sh
-          set -e
-          echo "Starting IPTV Stream Manager Backend..."
-          # Try migrations if alembic is available
-          if command -v alembic >/dev/null 2>&1; then
-            echo "Running database migrations (alembic upgrade head)..."
-            alembic upgrade head || echo "Alembic not configured, skipping migrations."
-          fi
-          # Move to backend if present
-          cd /app/backend 2>/dev/null || true
-          # Start API
-          exec uvicorn app.main:app --host 0.0.0.0 --port 8000
-          EOF
-          chmod +x backend/docker-entrypoint.sh
-        fi
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
@@ -258,7 +235,6 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
-          BUILD_DATE=${{ steps.meta.outputs.created }}
           VCS_REF=${{ github.sha }}
     
     - name: Generate deployment summary
@@ -278,7 +254,7 @@ jobs:
         echo "### 🐳 Run Command:" >> $GITHUB_STEP_SUMMARY
         echo '```bash' >> $GITHUB_STEP_SUMMARY
         echo "docker run -d -p 8000:8000 -p 3000:3000 \\" >> $GITHUB_STEP_SUMMARY
-        echo "  --name iptv-stream-manager \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --name iptv-stream-manager \\" >        echo '```bash' >> $GITHUB_STEP_SUMMARY        echo "docker run -d -p 8000:8000 -p 3000:3000 \\" >> $GITHUB_STEP_SUMMARY> $GIT        echo "  --name iptv-stream-manager \\" >> $GITHUB_STEP_SUMMARYHUB_STE        echo "  -e SECRET_KEY=\$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \\" >> $GITHUB_STEP_SUMMARY        echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARYP_SUMMARY        echo '```' >> $GITHUB_STEP_SUMMARY
         echo "  -e SECRET_KEY=\$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \\" >> $GITHUB_STEP_SUMMARY
         echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
