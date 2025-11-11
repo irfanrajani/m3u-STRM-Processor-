@@ -95,15 +95,6 @@ jobs:
         ALLOWED_ORIGINS: "*"
       run: |
         pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing || true
-    
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      continue-on-error: true
-      with:
-        token: ${{ secrets.CODECOV_TOKEN || '' }}
-        file: ./backend/coverage.xml
-        flags: backend
-        fail_ci_if_error: false
 
   # Frontend testing
   test-frontend:
@@ -254,7 +245,7 @@ jobs:
         echo "### 🐳 Run Command:" >> $GITHUB_STEP_SUMMARY
         echo '```bash' >> $GITHUB_STEP_SUMMARY
         echo "docker run -d -p 8000:8000 -p 3000:3000 \\" >> $GITHUB_STEP_SUMMARY
-        echo "  --name iptv-stream-manager \\" >        echo '```bash' >> $GITHUB_STEP_SUMMARY        echo "docker run -d -p 8000:8000 -p 3000:3000 \\" >> $GITHUB_STEP_SUMMARY> $GIT        echo "  --name iptv-stream-manager \\" >> $GITHUB_STEP_SUMMARYHUB_STE        echo "  -e SECRET_KEY=\$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \\" >> $GITHUB_STEP_SUMMARY        echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARYP_SUMMARY        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "  --name iptv-stream-manager \\" >> $GITHUB_STEP_SUMMARY
         echo "  -e SECRET_KEY=\$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \\" >> $GITHUB_STEP_SUMMARY
         echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
