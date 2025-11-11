@@ -21,27 +21,41 @@ A powerful web application that converts M3U playlist files into individual STRM
 
 ## 🚀 Quick Start
 
-### Docker
+### Option 1: Docker Compose (Recommended)
 
 ```bash
-docker pull ghcr.io/irfanrajani/m3u-strm-processor:latest
-docker run -p 8080:8080 -v ./output:/output ghcr.io/irfanrajani/m3u-strm-processor:latest
+# Clone the repository
+git clone https://github.com/irfanrajani/m3u-STRM-Processor-.git
+cd m3u-STRM-Processor-
+
+# Start everything (auto-configures on first run!)
+docker-compose up -d
+
+# That's it! Everything is auto-configured with secure defaults.
 ```
 
-Visit `http://localhost:8080`
+**First run will:**
+- ✅ Auto-generate secure SECRET_KEY
+- ✅ Auto-configure database connection
+- ✅ Auto-configure Redis connection
+- ✅ Create default admin user (admin/admin123)
 
-### Docker Compose
+**Access the application:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000/docs
+- Settings: http://localhost:3000/settings
+
+**⚠️ Change default password immediately at http://localhost:3000/settings**
+
+### Option 2: Pull from GitHub Container Registry
 
 ```bash
+# Pull the latest image
+docker pull ghcr.io/irfanrajani/m3u-strm-processor:latest
+
+# Run with docker-compose
 docker-compose up -d
 ```
-
-### QNAP
-
-1. Download `.qpkg` from [GitHub Actions](../../actions/workflows/build_qpkg.yml)
-2. Install via App Center → Install Manually
-3. Requires Container Station to be installed
-4. Access at `http://your-qnap-ip:8080`
 
 ## 📖 Usage Guide
 

@@ -4,6 +4,45 @@ from pydantic import field_validator
 from typing import Optional, List, Union
 import os
 import json
+import secrets
+from pathlib import Path
+
+
+def generate_secret_key() -> str:
+    """Generate a secure random secret key."""
+    return secrets.token_urlsafe(32)
+
+
+def ensure_env_file():
+    """Create .env file with secure defaults if it doesn't exist."""
+    env_file = Path("/app/.env")
+    
+    if not env_file.exists():
+        # Generate secure defaults
+        secret_key = generate_secret_key()
+        
+        env_content = f"""# Auto-generated configuration
+# You can modify these values through the web interface at http://localhost:3000/settings
+
+# Security
+SECRET_KEY={secret_key}
+
+# Database (auto-configured for Docker)
+DATABASE_URL=postgresql+asyncpg://iptv_user:iptv_pass@db:5432/iptv_db
+
+# Redis (auto-configured for Docker)
+REDIS_URL=redis://redis:6379/0
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+# Application
+DEBUG=false
+ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+"""
+        
+        env_file.parent.mkdir(parents=True, exist_ok=True)
+        env_file.write_text(env_content)
+        print(f"✅ Auto-generated secure configuration at {env_file}")
 
 
 class Settings(BaseSettings):
@@ -13,7 +52,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "IPTV Stream Manager"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    SECRET_KEY: str  # REQUIRED - Must be set in .env for production
+    SECRET_KEY: str = generate_secret_key()  # Auto-generate if not provided
     ALLOWED_ORIGINS: Union[List[str], str] = '["http://localhost:3000","http://localhost:8000"]'
     
     @field_validator('ALLOWED_ORIGINS', mode='before')
@@ -29,17 +68,17 @@ class Settings(BaseSettings):
                 return [origin.strip() for origin in v.split(',') if origin.strip()]
         return v
 
-    # Database
-    DATABASE_URL: str
+    # Database - auto-configured for Docker
+    DATABASE_URL: str = "postgresql+asyncpg://iptv_user:iptv_pass@db:5432/iptv_db"
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 40
 
-    # Redis
-    REDIS_URL: str
+    # Redis - auto-configured for Docker
+    REDIS_URL: str = "redis://redis:6379/0"
 
-    # Celery
-    CELERY_BROKER_URL: str
-    CELERY_RESULT_BACKEND: str
+    # Celery - auto-configured for Docker
+    CELERY_BROKER_URL: str = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
 
     # Stream Health Check
     HEALTH_CHECK_TIMEOUT: int = 10
@@ -75,5 +114,8 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
+
+# Ensure .env exists with secure defaults
+ensure_env_file()
 
 settings = Settings()

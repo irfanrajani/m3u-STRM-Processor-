@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
-echo "Starting IPTV Stream Manager Backend..."
+echo "🚀 Starting IPTV Stream Manager..."
 
 wait_for_service() {
   host_port="$1"
@@ -34,6 +34,30 @@ if [ -n "$REDIS_URL" ]; then
 fi
 
 cd /app/backend 2>/dev/null || true
+
+# Check if this is first run
+if [ ! -f /app/.env ]; then
+    echo ""
+    echo "═══════════════════════════════════════════════════════════"
+    echo "  🎉 FIRST RUN DETECTED - AUTO-CONFIGURING"
+    echo "═══════════════════════════════════════════════════════════"
+    echo ""
+    echo "  A secure configuration has been auto-generated!"
+    echo ""
+    echo "  📱 Access the web interface:"
+    echo "     http://localhost:3000"
+    echo ""
+    echo "  🔧 Configure settings:"
+    echo "     http://localhost:3000/settings"
+    echo ""
+    echo "  🔐 Default admin credentials:"
+    echo "     Username: admin"
+    echo "     Password: admin123"
+    echo "     ⚠️  CHANGE THIS IMMEDIATELY!"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════"
+    echo ""
+fi
 
 if command -v alembic >/dev/null 2>&1; then
   echo "Running database migrations..."

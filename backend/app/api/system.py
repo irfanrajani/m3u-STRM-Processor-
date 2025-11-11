@@ -1,16 +1,20 @@
-"""System information API endpoints."""
-from fastapi import APIRouter, Depends, Request
+"""System information and configuration API endpoints."""
+from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.core.database import get_db
-from app.core.config import settings
+from app.core.config import settings, generate_secret_key
 from app.core.auth import get_current_user
 from app.models.user import User
 from app.models.provider import Provider
 from app.models.channel import Channel, ChannelStream
 from app.models.vod import VODMovie, VODSeries
+from pydantic import BaseModel
+from typing import List, Dict, Any
 import platform
 import os
+import secrets
+from pathlib import Path
 
 router = APIRouter()
 
@@ -101,3 +105,118 @@ async def system_health(db: AsyncSession = Depends(get_db)):
         "database": "connected" if db_healthy else "disconnected",
         "celery": "available"  # Would need actual Celery check
     }
+
+
+class ConfigUpdate(BaseModel):
+    """Configuration update model."""
+    debug: bool = None
+    allowed_origins: List[str] = None
+    health_check_timeout: int = None
+    sync_interval: int = None
+
+
+class SecretKeyRotate(BaseModel):
+    """Secret key rotation response."""
+    new_secret_key: str
+    message: str
+
+
+@router.get("/config")
+async def get_configuration() -> Dict[str, Any]:
+    """
+    Get current system configuration (safe values only).
+    
+    Returns sanitized configuration for display in web interface.
+    """
+    return {
+        "app_name": settings.APP_NAME,
+        "app_version": settings.APP_VERSION,
+        "debug": settings.DEBUG,
+        "allowed_origins": settings.ALLOWED_ORIGINS,
+        "health_check_timeout": settings.HEALTH_CHECK_TIMEOUT,
+        "health_check_concurrent": settings.HEALTH_CHECK_CONCURRENT,
+        "verify_ssl": settings.VERIFY_SSL,
+        "max_providers": settings.MAX_PROVIDERS,
+        "sync_interval": settings.SYNC_INTERVAL,
+        "epg_refresh_interval": settings.EPG_REFRESH_INTERVAL,
+        "epg_days": settings.EPG_DAYS,
+        "has_secret_key": bool(settings.SECRET_KEY),  # Don't expose the actual key
+    }
+
+
+@router.put("/config")
+async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
+    """
+    Update system configuration through web interface.
+    
+    Modifies the .env file with new values.
+    """
+    env_file = Path("/app/.env")
+    
+    if not env_file.exists():
+        raise HTTPException(status_code=500, detail=".env file not found")
+    
+    # Read current .env
+    env_lines = env_file.read_text().split('\n')
+    updated_lines = []
+    
+    for line in env_lines:
+        if line.startswith('#') or not line.strip():
+            updated_lines.append(line)
+            continue
+            
+        if '=' in line:
+            key, _ = line.split('=', 1)
+            key = key.strip()
+            
+            # Update values if provided
+            if config.debug is not None and key == 'DEBUG':
+                updated_lines.append(f'DEBUG={str(config.debug).lower()}')
+            elif config.allowed_origins is not None and key == 'ALLOWED_ORIGINS':
+                import json
+                updated_lines.append(f'ALLOWED_ORIGINS={json.dumps(config.allowed_origins)}')
+            elif config.health_check_timeout is not None and key == 'HEALTH_CHECK_TIMEOUT':
+                updated_lines.append(f'HEALTH_CHECK_TIMEOUT={config.health_check_timeout}')
+            elif config.sync_interval is not None and key == 'SYNC_INTERVAL':
+                updated_lines.append(f'SYNC_INTERVAL={config.sync_interval}')
+            else:
+                updated_lines.append(line)
+        else:
+            updated_lines.append(line)
+    
+    # Write updated .env
+    env_file.write_text('\n'.join(updated_lines))
+    
+    return {
+        "message": "Configuration updated successfully. Restart required for changes to take effect.",
+        "restart_command": "docker-compose restart backend"
+    }
+
+
+@router.post("/rotate-secret-key")
+async def rotate_secret_key() -> SecretKeyRotate:
+    """
+    Generate a new SECRET_KEY.
+    
+    ⚠️ WARNING: This will invalidate all existing JWT tokens.
+    Users will need to log in again.
+    """
+    new_key = generate_secret_key()
+    
+    env_file = Path("/app/.env")
+    if env_file.exists():
+        content = env_file.read_text()
+        # Replace SECRET_KEY line
+        lines = content.split('\n')
+        updated_lines = []
+        for line in lines:
+            if line.startswith('SECRET_KEY='):
+                updated_lines.append(f'SECRET_KEY={new_key}')
+            else:
+                updated_lines.append(line)
+        env_file.write_text('\n'.join(updated_lines))
+    
+    return SecretKeyRotate(
+        new_secret_key=new_key,
+        message="Secret key rotated successfully. All users must log in again. Restart required."
+    )
