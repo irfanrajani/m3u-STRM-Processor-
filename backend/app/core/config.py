@@ -1,124 +1,43 @@
-"""Application configuration."""
-from pydantic_settings import BaseSettings
-from pydantic import field_validator
-from typing import Optional, List, Union
-import os
-import json
-import secrets
 from pathlib import Path
+from pydantic import BaseSettings
+import os
+import secrets
 
-
-def generate_secret_key() -> str:
-    """Generate a secure random secret key."""
+def generate_secret_key():
     return secrets.token_urlsafe(32)
 
-
 def ensure_env_file():
-    """Create .env file with secure defaults if it doesn't exist."""
     env_file = Path("/app/data/.env")
-    
-    if not env_file.exists():
-        secret_key = generate_secret_key()
-        
-        env_content = f"""# Auto-generated configuration
-# You can modify these values through the web interface at http://localhost:3001/settings
-
-# Security
-SECRET_KEY={secret_key}
-
-# Database (auto-configured for Docker)
-DATABASE_URL=postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db
-
-# Redis (auto-configured for Docker)
-REDIS_URL=redis://redis:6379/0
-CELERY_BROKER_URL=redis://redis:6379/0
-CELERY_RESULT_BACKEND=redis://redis:6379/0
-
-# Application
+    if env_file.exists():
+        return
+    db_user = os.getenv("POSTGRES_USER","iptv_user")
+    db_pass = os.getenv("POSTGRES_PASSWORD","iptv_secure_pass_change_me")
+    db_name = os.getenv("POSTGRES_DB","iptv_db")
+    db_host = os.getenv("POSTGRES_HOST","db")
+    db_port = os.getenv("POSTGRES_PORT","5432")
+    database_url = f"postgresql+asyncpg://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+    env_content = f"""SECRET_KEY={generate_secret_key()}
+DATABASE_URL={database_url}
+REDIS_URL={os.getenv('REDIS_URL','redis://redis:6379/0')}
+CELERY_BROKER_URL={os.getenv('CELERY_BROKER_URL','redis://redis:6379/0')}
+CELERY_RESULT_BACKEND={os.getenv('CELERY_RESULT_BACKEND','redis://redis:6379/0')}
 DEBUG=false
 ALLOWED_ORIGINS=["http://localhost:3001","http://localhost:8000"]
-
-# Ports
 BACKEND_PORT=8000
 FRONTEND_PORT=3001
 """
-        
-        env_file.parent.mkdir(parents=True, exist_ok=True)
-        env_file.write_text(env_content)
-        print(f"✅ Auto-generated secure configuration at {env_file}")
-
+    with open(env_file, "w") as f:
+        f.write(env_content)
 
 class Settings(BaseSettings):
-    """Application settings."""
-
-    # Application
-    APP_NAME: str = "IPTV Stream Manager"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = False
-    SECRET_KEY: str = generate_secret_key()
-    ALLOWED_ORIGINS: Union[List[str], str] = '["http://localhost:3001","http://localhost:8000"]'
-    
-    # Ports
-    BACKEND_PORT: int = 8000
-    FRONTEND_PORT: int = 3001
-    
-    @field_validator('ALLOWED_ORIGINS', mode='before')
-    @classmethod
-    def parse_allowed_origins(cls, v):
-        """Parse ALLOWED_ORIGINS from string or list."""
-        if isinstance(v, str):
-            try:
-                return json.loads(v)
-            except json.JSONDecodeError:
-                return [origin.strip() for origin in v.split(',') if origin.strip()]
-        return v
-
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db"
-    DB_POOL_SIZE: int = 20
-    DB_MAX_OVERFLOW: int = 40
-
-    # Redis
-    REDIS_URL: str = "redis://redis:6379/0"
-    CELERY_BROKER_URL: str = "redis://redis:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
-
-    # Stream Health Check
-    HEALTH_CHECK_TIMEOUT: int = 10
-    HEALTH_CHECK_CONCURRENT: int = 50
-    VERIFY_SSL: bool = False
-
-    # Output Directories
-    OUTPUT_DIR: str = "/app/output"
-    PLAYLISTS_DIR: str = "/app/output/playlists"
-    VOD_DIR: str = "/app/output/vod"
-    STRM_DIR: str = "/app/output/strm"
-    EPG_DIR: str = "/app/output/epg"
-
-    # Logging
-    LOG_LEVEL: str = "INFO"
-    LOG_FILE: str = "/app/logs/app.log"
-
-    # HDHomeRun Emulation
-    HDHR_DEVICE_ID: str = "12345678"
-    HDHR_FRIENDLY_NAME: str = "IPTV Stream Manager"
-    HDHR_FIRMWARE_NAME: str = "hdhomerun_iptv"
-    HDHR_FIRMWARE_VERSION: str = "1.0.0"
-    HDHR_TUNER_COUNT: int = 6
-    HDHR_PROXY_MODE: str = "direct"
-
-    # Provider Settings
-    MAX_PROVIDERS: int = 10
-    SYNC_INTERVAL: int = 3600
-
-    # EPG Settings
-    EPG_REFRESH_INTERVAL: int = 86400
-    EPG_DAYS: int = 7
+    DATABASE_URL: str = os.getenv("DATABASE_URL","postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db")
+    REDIS_URL: str = os.getenv("REDIS_URL","redis://redis:6379/0")
+    CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL","redis://redis:6379/0")
+    CELERY_RESULT_BACKEND: str = os.getenv("CELERY_RESULT_BACKEND","redis://redis:6379/0")
+    DEBUG: bool = os.getenv("DEBUG", "false") == "true"
+    ALLOWED_ORIGINS: list = os.getenv("ALLOWED_ORIGINS", "").split(",")
+    BACKEND_PORT: int = int(os.getenv("BACKEND_PORT", 8000))
+    FRONTEND_PORT: int = int(os.getenv("FRONTEND_PORT", 3001))
 
     class Config:
         env_file = "/app/data/.env"
-        case_sensitive = False
-
-
-ensure_env_file()
-settings = Settings()

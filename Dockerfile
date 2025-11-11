@@ -8,11 +8,18 @@ RUN npm run build
 
 # Backend stage
 FROM python:3.11-slim
+
+# Environment variables (can be overridden by docker-compose)
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     UVICORN_WORKERS=1 \
-    SQLALCHEMY_WARN_20=1
+    SQLALCHEMY_WARN_20=1 \
+    POSTGRES_USER=iptv_user \
+    POSTGRES_PASSWORD=iptv_secure_pass_change_me \
+    POSTGRES_DB=iptv_db \
+    POSTGRES_HOST=db \
+    POSTGRES_PORT=5432
 
 WORKDIR /app
 
