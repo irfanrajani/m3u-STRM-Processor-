@@ -1,3 +1,22 @@
+# Frontend build stage
+FROM node:20-alpine AS frontend-build
+WORKDIR /app/frontend
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies with verbose logging
+RUN npm install --verbose || npm ci --verbose
+
+# Copy all frontend source files
+COPY frontend/ ./
+
+# Build the application
+RUN npm run build
+
+# Verify the build output exists
+RUN ls -la dist/ && test -f dist/index.html
+
 # Final image
 FROM python:3.11-slim
 
@@ -24,8 +43,8 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 # Copy backend code
 COPY backend/ /app/backend/
 
-# Copy the PRE-BUILT frontend from your local 'frontend/dist' directory
-COPY frontend/dist ./frontend/dist
+# Copy the BUILT frontend from the build stage
+COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 # Copy and prepare entrypoint
 COPY backend/docker-entrypoint.sh ./docker-entrypoint.sh

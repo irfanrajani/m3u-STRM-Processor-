@@ -25,6 +25,8 @@ from app.api import (
     favorites,
     analytics,
 )
+from passlib.context import CryptContext
+from sqlalchemy import select
 
 # Configure logging - ensure log directory exists BEFORE creating FileHandler
 log_file = Path(settings.LOG_FILE)
@@ -43,6 +45,29 @@ async def lifespan(app: FastAPI):
     logger.info("Starting IPTV Stream Manager...")
     await init_db()
     logger.info("Database initialized")
+    
+    # Create default admin user if it doesn't exist
+    from app.core.database import async_session
+    from app.models.user import User
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
+    async with async_session() as db:
+        result = await db.execute(select(User).where(User.username == "admin"))
+        admin = result.scalar_one_or_none()
+        if not admin:
+            admin = User(
+                username="admin",
+                email="admin@example.com",
+                hashed_password=pwd_context.hash("admin123"),
+                is_active=True,
+                is_superuser=True
+            )
+            db.add(admin)
+            await db.commit()
+            logger.info("✅ Created default admin user (admin/admin123)")
+        else:
+            logger.info("Admin user already exists")
+    
     yield
     logger.info("Shutting down...")
     await close_db()
