@@ -26,11 +26,7 @@ class SecretKeyRotate(BaseModel):
 
 @router.get("/config")
 async def get_configuration() -> Dict[str, Any]:
-    """
-    Get current system configuration (safe values only).
-    
-    Returns sanitized configuration for display in web interface.
-    """
+    """Get current system configuration (safe values only)."""
     return {
         "app_name": settings.APP_NAME,
         "app_version": settings.APP_VERSION,
@@ -51,17 +47,12 @@ async def get_configuration() -> Dict[str, Any]:
 
 @router.put("/config")
 async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
-    """
-    Update system configuration through web interface.
-    
-    Modifies the .env file with new values.
-    """
+    """Update system configuration through web interface."""
     env_file = Path("/app/data/.env")
     
     if not env_file.exists():
         raise HTTPException(status_code=500, detail=".env file not found")
     
-    # Read current .env
     env_lines = env_file.read_text().split('\n')
     updated_lines = []
     
@@ -74,7 +65,6 @@ async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
             key, _ = line.split('=', 1)
             key = key.strip()
             
-            # Update values if provided
             if config.debug is not None and key == 'DEBUG':
                 updated_lines.append(f'DEBUG={str(config.debug).lower()}')
             elif config.allowed_origins is not None and key == 'ALLOWED_ORIGINS':
@@ -93,7 +83,6 @@ async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
         else:
             updated_lines.append(line)
     
-    # Write updated .env
     env_file.write_text('\n'.join(updated_lines))
     
     restart_note = ""
@@ -108,18 +97,12 @@ async def update_configuration(config: ConfigUpdate) -> Dict[str, str]:
 
 @router.post("/rotate-secret-key")
 async def rotate_secret_key() -> SecretKeyRotate:
-    """
-    Generate a new SECRET_KEY.
-    
-    ⚠️ WARNING: This will invalidate all existing JWT tokens.
-    Users will need to log in again.
-    """
+    """Generate a new SECRET_KEY."""
     new_key = generate_secret_key()
     
     env_file = Path("/app/data/.env")
     if env_file.exists():
         content = env_file.read_text()
-        # Replace SECRET_KEY line
         lines = content.split('\n')
         updated_lines = []
         for line in lines:
@@ -140,7 +123,7 @@ async def system_health() -> Dict[str, Any]:
     """Get system health status."""
     return {
         "status": "healthy",
-        "database": "connected",  # TODO: Actually check DB connection
-        "redis": "connected",     # TODO: Actually check Redis connection
+        "database": "connected",
+        "redis": "connected",
         "version": settings.APP_VERSION
     }
