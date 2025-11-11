@@ -1,45 +1,44 @@
-# Stage 1: Build frontend
-FROM node:20-alpine AS build-stage
-WORKDIR /app/iptv-stream-manager-frontend
+# Frontend build stage
+FROM node:20-alpine AS frontend-build
+WORKDIR /app/frontend
 COPY frontend/package*.json ./
-# Fix: Install ALL dependencies (including devDependencies) for build
 RUN npm ci || npm install
 COPY frontend/ ./
 RUN npm run build
-    
-# Stage 2: Build the final Python application
+
+# Backend stage
 FROM python:3.11-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    UVICORN_WORKERS=1 \
+    SQLALCHEMY_WARN_20=1
+
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    netcat-openbsd \
-    curl \
+# System deps + dos2unix to fix line-ending issues
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ffmpeg curl ca-certificates netcat-openbsd dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend files
+# Copy requirements first for layer caching
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Copy backend source
 COPY backend/ ./backend/
 
-# Install Python dependencies
-COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy built frontend
+COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
-# Copy frontend build
-COPY --from=build-stage /app/iptv-stream-manager-frontend/dist ./frontend/dist
+# Copy and fix entrypoint script
+COPY backend/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN dos2unix docker-entrypoint.sh && chmod +x docker-entrypoint.sh
 
-# Create necessary directories
-RUN mkdir -p /app/data /app/output /app/logs && \
-    chmod -R 755 /app/data /app/output /app/logs
+# Create runtime directories
+RUN mkdir -p /app/data /app/logs /app/output
 
-# Copy entrypoint
-COPY backend/docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
+EXPOSE 8000 3001
 
-# Expose ports
-EXPOSE 8000 3000
-
-# Set working directory to backend
 WORKDIR /app/backend
-
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
