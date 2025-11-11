@@ -62,19 +62,23 @@ fi
 
 if command -v alembic >/dev/null 2>&1; then
   echo "Running database migrations..."
-  alembic upgrade head || echo "Warning: Alembic upgrade failed."
+  alembic upgrade head || echo "Warning: Alembic upgrade failed. Database may need manual setup."
 fi
 
-python - <<'PYCODE' || true
-from app.database import SessionLocal
-from app.models.user import User
-
-db = SessionLocal()
+# Skip the user check if app.database module is missing
+python - <<'PYCODE' 2>/dev/null || echo "Skipping superuser check - database models not ready"
 try:
-    if not db.query(User).filter(User.is_superuser == True).first():
-        print("Warning: No superuser found. Create one via management API.")
-finally:
-    db.close()
+    from app.core.database import SessionLocal
+    from app.models.user import User
+    
+    db = SessionLocal()
+    try:
+        if not db.query(User).filter(User.is_superuser == True).first():
+            print("Warning: No superuser found. Create one via management API.")
+    finally:
+        db.close()
+except ImportError:
+    print("Database models not loaded yet")
 PYCODE
 
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000
