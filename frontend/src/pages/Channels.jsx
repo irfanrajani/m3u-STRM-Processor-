@@ -35,10 +35,10 @@ export default function Channels() {
   );
 
   const getQualityBadge = (streamCount) => {
-    if (streamCount === 0) return { text: 'No Streams', color: 'gray' };
-    if (streamCount === 1) return { text: 'SD', color: 'yellow' };
-    if (streamCount === 2) return { text: 'HD', color: 'blue' };
-    return { text: '4K', color: 'purple' };
+    if (streamCount === 0) return { text: 'No Streams', color: 'gray', iconClass: 'text-gray-500', textClass: 'text-gray-700' };
+    if (streamCount === 1) return { text: 'SD', color: 'yellow', iconClass: 'text-yellow-500', textClass: 'text-yellow-700' };
+    if (streamCount === 2) return { text: 'HD', color: 'blue', iconClass: 'text-blue-500', textClass: 'text-blue-700' };
+    return { text: '4K', color: 'purple', iconClass: 'text-purple-500', textClass: 'text-purple-700' };
   };
 
   return (
@@ -185,8 +185,8 @@ export default function Channels() {
                       {channel.category || 'Uncategorized'}
                     </span>
                     <div className="flex items-center space-x-1">
-                      <Signal className={`h-4 w-4 text-${quality.color}-500`} />
-                      <span className={`text-xs font-medium text-${quality.color}-700`}>
+                      <Signal className={`h-4 w-4 ${quality.iconClass}`} />
+                      <span className={`text-xs font-medium ${quality.textClass}`}>
                         {quality.text}
                       </span>
                     </div>

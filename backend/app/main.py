@@ -1,13 +1,17 @@
 """Main FastAPI application."""
 
 import logging
+import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings  # instance
 from app.core.database import init_db, close_db
@@ -24,6 +28,7 @@ from app.api import (
     users,
     favorites,
     analytics,
+    merge,
 )
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -39,6 +44,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address, default_limits=["100 per minute"])
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -49,8 +57,14 @@ async def lifespan(app: FastAPI):
     # Create default admin user if it doesn't exist
     from app.core.database import async_session
     from app.models.user import User
+    import os
     # Password hashing - using argon2 for modern security
     pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+    
+    # Get admin password from environment or use default (with warning)
+    default_admin_password = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123")
+    if default_admin_password == "admin123":
+        logger.warning("⚠️  Using default admin password! Set DEFAULT_ADMIN_PASSWORD environment variable for production!")
     
     async with async_session() as db:
         result = await db.execute(select(User).where(User.username == "admin"))
@@ -59,13 +73,15 @@ async def lifespan(app: FastAPI):
             admin = User(
                 username="admin",
                 email="admin@example.com",
-                hashed_password=pwd_context.hash("admin123"),
+                hashed_password=pwd_context.hash(default_admin_password),
                 is_active=True,
                 is_superuser=True
             )
             db.add(admin)
             await db.commit()
-            logger.info("✅ Created default admin user (admin/admin123)")
+            logger.info(f"✅ Created default admin user (username: admin)")
+            if default_admin_password == "admin123":
+                logger.warning("⚠️  SECURITY: Change admin password immediately after first login!")
         else:
             logger.info("Admin user already exists")
     
@@ -75,6 +91,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
+
+# Add rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -95,6 +115,7 @@ app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
 app.include_router(epg.router, prefix="/api/epg", tags=["epg"])
 app.include_router(favorites.router, prefix="/api/favorites", tags=["favorites"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
+app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(hdhr.router, tags=["hdhr"])
 
@@ -120,10 +141,12 @@ if frontend_dist.exists():
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_frontend(full_path: str):
-        # Exclude API and docs
+        # Exclude API and docs from SPA catch-all so real API/doc routes handle them.
+        # If a request hits this path with an excluded prefix, respond with 404.
         excluded_prefixes = ("api/", "docs", "openapi.json", "redoc")
         if any(full_path.startswith(prefix) for prefix in excluded_prefixes):
-            return {"error": "Not found", "path": full_path}
+            # Return proper 404 to avoid masking missing API endpoints with 200 JSON
+            raise HTTPException(status_code=404, detail={"error": "Not found", "path": full_path})
 
         file_path = frontend_dist / full_path if full_path else None
         if file_path and file_path.exists() and file_path.is_file():

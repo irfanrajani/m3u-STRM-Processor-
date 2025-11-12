@@ -1,7 +1,15 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext({
+  user: null,
+  isAuthenticated: false,
+  isAdmin: false,
+  isLoading: true,
+  login: () => {},
+  logout: () => {},
+  api: null
+});
 
 const api = axios.create({
   baseURL: '/api',
@@ -10,18 +18,33 @@ const api = axios.create({
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // You would typically verify the token with a '/api/users/me' endpoint
-      // For now, we'll assume the token is valid if it exists
-      setIsAuthenticated(true);
-      // setUser(decoded_user_data);
+      
+      // Fetch user data to determine role
+      api.get('/auth/me')
+        .then(response => {
+          setUser(response.data);
+          setIsAuthenticated(true);
+          setIsAdmin(response.data.role === 'admin');
+        })
+        .catch(error => {
+          console.error('Failed to fetch user data:', error);
+          localStorage.removeItem('accessToken');
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const login = async (username, password) => {
@@ -37,8 +60,13 @@ export const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem('accessToken', access_token);
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      
+      // Fetch user data to set role
+      const userResponse = await api.get('/auth/me');
+      setUser(userResponse.data);
       setIsAuthenticated(true);
-      // You could fetch user data here and call setUser()
+      setIsAdmin(userResponse.data.role === 'admin');
+      
       return true;
     } catch (error) {
       console.error('Login failed:', error);
@@ -51,10 +79,11 @@ export const AuthProvider = ({ children }) => {
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
     setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, api }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, isLoading, login, logout, api }}>
       {children}
     </AuthContext.Provider>
   );

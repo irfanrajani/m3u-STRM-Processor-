@@ -110,8 +110,8 @@ async def _sync_xstream_provider(db, provider, matcher, quality_analyzer):
             variant = matcher.extract_variant(channel_name)
             normalized_name = matcher.normalize_name(channel_name)
 
-            # Find or create channel
-            channel = await _find_or_create_channel(
+            # Find or create channel (returns channel and merge metadata)
+            channel, merge_info = await _find_or_create_channel(
                 db, channel_name, normalized_name, category, region, variant, logo_url, matcher
             )
 
@@ -135,7 +135,7 @@ async def _sync_xstream_provider(db, provider, matcher, quality_analyzer):
                 existing_stream = existing_stream.scalar_one_or_none()
 
                 if not existing_stream:
-                    # Create new stream
+                    # Create new stream with merge metadata
                     new_stream = ChannelStream(
                         channel_id=channel.id,
                         provider_id=provider.id,
@@ -148,7 +148,11 @@ async def _sync_xstream_provider(db, provider, matcher, quality_analyzer):
                         bitrate=quality_info.get('bitrate'),
                         codec=quality_info.get('codec'),
                         quality_score=quality_info.get('quality_score', 0),
-                        is_active=True
+                        is_active=True,
+                        # Merge metadata from find_or_create_channel
+                        merge_confidence=merge_info.get('confidence'),
+                        merge_method=merge_info.get('method'),
+                        merge_reason=merge_info.get('reason')
                     )
                     db.add(new_stream)
                     stream_count += 1
@@ -203,8 +207,8 @@ async def _sync_m3u_provider(db, provider, matcher, quality_analyzer):
             variant = matcher.extract_variant(channel_name)
             normalized_name = matcher.normalize_name(channel_name)
 
-            # Find or create channel
-            channel = await _find_or_create_channel(
+            # Find or create channel (returns channel and merge metadata)
+            channel, merge_info = await _find_or_create_channel(
                 db, channel_name, normalized_name, category, region, variant, logo_url, matcher
             )
 
@@ -225,7 +229,7 @@ async def _sync_m3u_provider(db, provider, matcher, quality_analyzer):
                 existing_stream = existing_stream.scalar_one_or_none()
 
                 if not existing_stream:
-                    # Create new stream
+                    # Create new stream with merge metadata
                     new_stream = ChannelStream(
                         channel_id=channel.id,
                         provider_id=provider.id,
@@ -238,7 +242,11 @@ async def _sync_m3u_provider(db, provider, matcher, quality_analyzer):
                         codec=quality_info.get('codec'),
                         quality_score=quality_info.get('quality_score', 0),
                         is_active=True,
-                        metadata=channel_data
+                        metadata=channel_data,
+                        # Merge metadata from find_or_create_channel
+                        merge_confidence=merge_info.get('confidence'),
+                        merge_method=merge_info.get('method'),
+                        merge_reason=merge_info.get('reason')
                     )
                     db.add(new_stream)
                     stream_count += 1
@@ -260,32 +268,69 @@ async def _sync_m3u_provider(db, provider, matcher, quality_analyzer):
 
 
 async def _find_or_create_channel(db, name, normalized_name, category, region, variant, logo_url, matcher):
-    """Find existing channel or create new one."""
-    # Search for existing channels
+    """Find existing channel or create new one. Returns (channel, merge_info). Optimized version."""
+    
+    # Try exact match first with composite criteria to reduce results
+    result = await db.execute(
+        select(Channel).where(
+            Channel.normalized_name == normalized_name,
+            Channel.region == region,
+            Channel.variant == variant
+        ).limit(1)
+    )
+    existing_channel = result.scalar_one_or_none()
+
+    if existing_channel:
+        # Exact match found - update if needed
+        if not existing_channel.logo_url and logo_url:
+            existing_channel.logo_url = logo_url
+        
+        merge_info = {
+            'confidence': 100.0,
+            'method': 'exact_match',
+            'reason': f"Exact match on normalized name '{normalized_name}', region '{region}', variant '{variant}'"
+        }
+        return existing_channel, merge_info
+    
+    # No exact match - search by normalized name only for fuzzy matching
     result = await db.execute(
         select(Channel).where(Channel.normalized_name == normalized_name)
     )
     existing_channels = result.scalars().all()
 
-    # Try to find matching channel
+    # Try fuzzy matching
     matching_channel = None
+    best_similarity = 0
+    
     for existing_channel in existing_channels:
+        # Calculate similarity for this candidate
+        similarity = matcher.calculate_similarity(name, existing_channel.name)
+        
         if matcher.is_same_channel(
             name, existing_channel.name,
             region, existing_channel.region,
             variant, existing_channel.variant
         ):
-            matching_channel = existing_channel
-            break
+            if similarity > best_similarity:
+                best_similarity = similarity
+                matching_channel = existing_channel
 
     if matching_channel:
+        # Channel matched - prepare merge metadata
+        merge_info = {
+            'confidence': round(best_similarity, 1),
+            'method': 'fuzzy_match',
+            'reason': f"Matched with {best_similarity:.1f}% similarity on normalized name '{normalized_name}'"
+        }
+        
         # Update channel info if needed
         if not matching_channel.logo_url and logo_url:
             matching_channel.logo_url = logo_url
         matching_channel.stream_count += 1
-        return matching_channel
+        
+        return matching_channel, merge_info
     else:
-        # Create new channel
+        # Create new channel - no merge occurred
         new_channel = Channel(
             name=name,
             normalized_name=normalized_name,
@@ -294,11 +339,19 @@ async def _find_or_create_channel(db, name, normalized_name, category, region, v
             variant=variant,
             logo_url=logo_url,
             enabled=True,
-            stream_count=0
+            stream_count=1
         )
         db.add(new_channel)
         await db.flush()  # Get ID
-        return new_channel
+        
+        # New channel has merge metadata indicating it's the original
+        merge_info = {
+            'confidence': 100.0,
+            'method': 'exact_match',
+            'reason': f"First stream for new channel '{name}'"
+        }
+        
+        return new_channel, merge_info
 
 
 @celery_app.task(name="app.tasks.sync_tasks.sync_all_providers")

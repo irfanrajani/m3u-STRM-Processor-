@@ -4,13 +4,21 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
-# Create async engine
+# Create async engine with optimized pool settings
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=settings.DB_ECHO,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
+    pool_recycle=settings.DB_POOL_RECYCLE,
     pool_pre_ping=True,
+    connect_args={
+        "server_settings": {
+            "application_name": "iptv_manager",
+            "statement_timeout": "30000",  # 30 second query timeout
+        }
+    }
 )
 
 # Create async session factory

@@ -113,29 +113,43 @@ async def _run_health_check_async():
 
 
 async def _update_channel_stream_counts(db):
-    """Update stream counts for all channels."""
+    """Update stream counts for all channels using optimized single query."""
+    from sqlalchemy import func
+    
+    # Get all channels with their active stream counts in a single query
+    result = await db.execute(
+        select(
+            ChannelStream.channel_id,
+            func.count(ChannelStream.id).label('active_count')
+        )
+        .where(ChannelStream.is_active.is_(True))
+        .group_by(ChannelStream.channel_id)
+    )
+    
+    stream_counts = {row.channel_id: row.active_count for row in result.all()}
+    
     # Get all channels
     result = await db.execute(select(Channel))
     channels = result.scalars().all()
-
+    
     for channel in channels:
-        # Count active streams
-        count_result = await db.execute(
-            select(ChannelStream).where(
+        channel.stream_count = stream_counts.get(channel.id, 0)
+        
+        # Re-prioritize streams for this channel
+        result = await db.execute(
+            select(ChannelStream)
+            .where(
                 ChannelStream.channel_id == channel.id,
                 ChannelStream.is_active.is_(True)
             )
+            .order_by(ChannelStream.quality_score.desc())
         )
-        active_streams = count_result.scalars().all()
-
-        # Update stream count and re-prioritize
-        channel.stream_count = len(active_streams)
-
-        # Sort streams by quality score and update priority order
-        sorted_streams = sorted(active_streams, key=lambda s: s.quality_score, reverse=True)
-        for idx, stream in enumerate(sorted_streams):
+        active_streams = result.scalars().all()
+        
+        # Bulk update priority
+        for idx, stream in enumerate(active_streams):
             stream.priority_order = idx
-
+    
     await db.commit()
 
 

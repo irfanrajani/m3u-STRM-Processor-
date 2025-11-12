@@ -8,8 +8,9 @@ from pathlib import Path
 from app.core.config import settings, generate_secret_key
 from app.core.database import get_db
 from app.models.provider import Provider
-from app.models.channel import Channel
+from app.models.channel import Channel, ChannelStream
 from app.models.vod import VODMovie, VODSeries
+from app.services.stream_connection_manager import stream_manager
 
 router = APIRouter()
 
@@ -159,5 +160,106 @@ async def get_system_stats(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]
         "total_vod_items": total_vod_items,
         "total_vod_movies": total_movies or 0,
         "total_vod_series": total_series or 0,
+    }
+
+
+@router.get("/stats/realtime")
+async def get_realtime_stats(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+    """Get real-time system statistics including streaming and health data."""
+    
+    # Get stream manager stats
+    stream_stats = stream_manager.get_stats()
+    
+    # Count channels with streams
+    total_channels = await db.scalar(select(func.count(Channel.id)))
+    
+    # Count total streams
+    total_streams = await db.scalar(select(func.count(ChannelStream.id)))
+    
+    # Count active streams (not disabled)
+    active_streams_count = await db.scalar(
+        select(func.count(ChannelStream.id)).where(ChannelStream.is_active == True)
+    )
+    
+    # Get health stats
+    healthy_streams = await db.scalar(
+        select(func.count(ChannelStream.id)).where(
+            ChannelStream.is_active == True,
+            ChannelStream.consecutive_failures == 0
+        )
+    )
+    
+    unhealthy_streams = await db.scalar(
+        select(func.count(ChannelStream.id)).where(
+            ChannelStream.is_active == True,
+            ChannelStream.consecutive_failures > 0
+        )
+    )
+    
+    # Calculate merge statistics
+    channels_with_multiple_streams = await db.scalar(
+        select(func.count()).select_from(
+            select(ChannelStream.channel_id)
+            .group_by(ChannelStream.channel_id)
+            .having(func.count(ChannelStream.id) > 1)
+            .subquery()
+        )
+    )
+    
+    # Calculate bandwidth savings
+    bandwidth_saved_percentage = 0
+    if stream_stats['total_clients_served'] > 0:
+        potential_bandwidth = stream_stats['total_bandwidth_mb'] * stream_stats['total_clients_served']
+        actual_bandwidth = stream_stats['total_bandwidth_mb']
+        if potential_bandwidth > 0:
+            bandwidth_saved_percentage = round(
+                ((potential_bandwidth - actual_bandwidth) / potential_bandwidth) * 100,
+                1
+            )
+    
+    return {
+        # Streaming stats
+        "streaming": {
+            "active_streams": stream_stats['active_streams'],
+            "active_clients": stream_stats['active_clients'],
+            "total_bandwidth_mb": stream_stats['total_bandwidth_mb'],
+            "bandwidth_saved_mb": stream_stats['bandwidth_saved_mb'],
+            "bandwidth_saved_percentage": bandwidth_saved_percentage,
+            "total_streams_created": stream_stats['total_streams_created'],
+            "total_clients_served": stream_stats['total_clients_served'],
+            "peak_concurrent_streams": stream_stats['peak_concurrent_streams'],
+            "streams": stream_stats['streams']
+        },
+        
+        # Channel stats
+        "channels": {
+            "total": total_channels or 0,
+            "with_multiple_streams": channels_with_multiple_streams or 0,
+            "merged_count": channels_with_multiple_streams or 0
+        },
+        
+        # Stream stats
+        "streams": {
+            "total": total_streams or 0,
+            "active": active_streams_count or 0,
+            "healthy": healthy_streams or 0,
+            "unhealthy": unhealthy_streams or 0,
+            "health_percentage": round((healthy_streams / active_streams_count * 100) if active_streams_count else 0, 1)
+        },
+        
+        # Provider stats
+        "providers": {
+            "total": await db.scalar(select(func.count(Provider.id))) or 0,
+            "active": await db.scalar(
+                select(func.count(Provider.id)).where(Provider.enabled == True)
+            ) or 0
+        },
+        
+        # Deduplication stats
+        "deduplication": {
+            "total_streams_imported": total_streams or 0,
+            "unique_channels": total_channels or 0,
+            "duplicates_merged": (total_streams or 0) - (total_channels or 0)
+        }
     }
 

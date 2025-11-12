@@ -8,6 +8,7 @@ import Providers from './pages/Providers';
 import Settings from './pages/Settings';
 import VOD from './pages/VOD';
 import Channels from './pages/Channels';
+import ChannelsNew from './pages/Channels_New';
 import STRMProcessor from './pages/STRMProcessor';
 import Analytics from './pages/Analytics';
 import Favorites from './pages/Favorites';
@@ -87,7 +88,8 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/strm-processor" element={<STRMProcessor />} />
                 <Route path="/providers" element={<Providers />} />
-                <Route path="/channels" element={<Channels />} />
+                <Route path="/channels" element={<ChannelsNew />} />
+                <Route path="/channels-old" element={<Channels />} />
                 <Route path="/vod" element={<VOD />} />
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/analytics" element={<Analytics />} />

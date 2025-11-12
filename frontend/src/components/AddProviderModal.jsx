@@ -53,7 +53,7 @@ export default function AddProviderModal({ isOpen, onClose, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const payload = sanitizePayload()
+    const payload = sanitizePayload(formData)
     if (payload.provider_type === 'xstream' && (!payload.xstream_host || !payload.xstream_username || !payload.xstream_password)) {
       toast.error('Xstream host, username & password required')
       return

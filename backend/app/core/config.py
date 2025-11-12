@@ -35,10 +35,10 @@ APP_NAME=IPTV Stream Manager
 APP_VERSION=0.1.0
 LOG_FILE=/app/data/logs/app.log
 LOG_LEVEL=INFO
-DB_POOL_SIZE=10
-DB_MAX_OVERFLOW=20
-DB_POOL_TIMEOUT=30
-DB_POOL_RECYCLE=3600
+DB_POOL_SIZE=20
+DB_MAX_OVERFLOW=40
+DB_POOL_TIMEOUT=10
+DB_POOL_RECYCLE=1800
 DB_ECHO=false
 """)
 
@@ -56,10 +56,10 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://iptv_user:iptv_secure_pass_change_me@db:5432/iptv_db"
-    DB_POOL_SIZE: int = 10
-    DB_MAX_OVERFLOW: int = 20
-    DB_POOL_TIMEOUT: int = 30
-    DB_POOL_RECYCLE: int = 3600
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 40
+    DB_POOL_TIMEOUT: int = 10
+    DB_POOL_RECYCLE: int = 1800
     DB_ECHO: bool = False
 
     # Redis & Celery

@@ -80,6 +80,12 @@ class ChannelStream(Base):
     # Prioritization
     priority_order = Column(Integer, default=0)  # 0 = highest quality, 1 = second best, etc.
 
+    # Merge metadata (track why this stream was merged into this channel)
+    merge_confidence = Column(Float, nullable=True)  # 0-100 confidence score
+    merge_method = Column(String(50), nullable=True)  # 'fuzzy_match', 'logo_match', 'exact_match', 'manual'
+    merge_reason = Column(Text, nullable=True)  # Detailed explanation of merge decision
+    manual_override = Column(Boolean, default=False)  # True if user manually moved this stream
+
     # Original metadata from provider
     original_name = Column(String(500), nullable=True)
     original_category = Column(String(255), nullable=True)
