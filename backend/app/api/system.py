@@ -1,9 +1,15 @@
 """System configuration and management API."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from pathlib import Path
 from app.core.config import settings, generate_secret_key
+from app.core.database import get_db
+from app.models.provider import Provider
+from app.models.channel import Channel
+from app.models.vod import VODMovie, VODSeries
 
 router = APIRouter()
 
@@ -127,3 +133,31 @@ async def system_health() -> Dict[str, Any]:
         "redis": "connected",
         "version": settings.APP_VERSION
     }
+
+
+@router.get("/stats")
+async def get_system_stats(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+    """Get system-wide statistics."""
+    # Count providers
+    total_providers = await db.scalar(select(func.count(Provider.id)))
+    active_providers = await db.scalar(
+        select(func.count(Provider.id)).where(Provider.enabled == True)
+    )
+    
+    # Count channels
+    total_channels = await db.scalar(select(func.count(Channel.id)))
+    
+    # Count VOD items
+    total_movies = await db.scalar(select(func.count(VODMovie.id)))
+    total_series = await db.scalar(select(func.count(VODSeries.id)))
+    total_vod_items = (total_movies or 0) + (total_series or 0)
+    
+    return {
+        "total_providers": total_providers or 0,
+        "active_providers": active_providers or 0,
+        "total_channels": total_channels or 0,
+        "total_vod_items": total_vod_items,
+        "total_vod_movies": total_movies or 0,
+        "total_vod_series": total_series or 0,
+    }
+

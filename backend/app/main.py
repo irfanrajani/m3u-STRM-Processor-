@@ -1,119 +1,123 @@
 """Main FastAPI application."""
+
 import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import RequestValidationError
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from app.core.config import settings
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+from app.core.config import settings  # instance
 from app.core.database import init_db, close_db
-from app.core.exceptions import (
-    IPTVManagerException,
-    iptv_exception_handler,
-    http_exception_handler,
-    validation_exception_handler,
-    generic_exception_handler
-)
 from app.api import (
-    providers, channels, vod, epg, health,
-    settings as settings_router, auth, hdhr, system,
-    users, favorites, analytics
+    providers,
+    channels,
+    vod,
+    epg,
+    health,
+    settings as settings_router,
+    auth,
+    hdhr,
+    system,
+    users,
+    favorites,
+    analytics,
 )
+from passlib.context import CryptContext
+from sqlalchemy import select
 
-# Ensure log directory exists
-Path(settings.LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
+# Configure logging - ensure log directory exists BEFORE creating FileHandler
+log_file = Path(settings.LOG_FILE)
+log_file.parent.mkdir(parents=True, exist_ok=True)
 
-# Configure logging
 logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(settings.LOG_FILE),
-        logging.StreamHandler()
-    ]
+    level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(settings.LOG_FILE), logging.StreamHandler()],
 )
-
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan events."""
-    # Startup
-    logger.info("Starting IPTV Stream Manager")
+    logger.info("Starting IPTV Stream Manager...")
     await init_db()
     logger.info("Database initialized")
 
-    yield
+    # Create default admin user if it doesn't exist
+    from app.core.database import async_session
+    from app.models.user import User
+    # Password hashing - using argon2 for modern security
+    pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-    # Shutdown
-    logger.info("Shutting down IPTV Stream Manager")
+    async with async_session() as db:
+        result = await db.execute(select(User).where(User.username == "admin"))
+        admin = result.scalar_one_or_none()
+        if not admin:
+            admin = User(
+                username="admin",
+                email="admin@example.com",
+                hashed_password=pwd_context.hash("admin123"),
+                is_active=True,
+                is_superuser=True
+            )
+            db.add(admin)
+            await db.commit()
+            logger.info("✅ Created default admin user (admin/admin123)")
+        else:
+            logger.info("Admin user already exists")
+
+    yield
+    logger.info("Shutting down...")
     await close_db()
 
 
-# Create FastAPI app
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.APP_VERSION,
-    description="Comprehensive IPTV stream management for Emby",
-    lifespan=lifespan
-)
+app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
 
-# Configure rate limiting
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Configure exception handlers
-app.add_exception_handler(IPTVManagerException, iptv_exception_handler)
-app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(Exception, generic_exception_handler)
-
-# Configure CORS - Allow all origins for self-hosted home use
-# This is safe because the app runs on your local network
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS if not settings.DEBUG else ["*"],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+# Routers
+app.include_router(health.router, prefix="/api/health", tags=["health"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
-app.include_router(favorites.router, prefix="/api/favorites", tags=["favorites"])
-app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(providers.router, prefix="/api/providers", tags=["providers"])
 app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
 app.include_router(epg.router, prefix="/api/epg", tags=["epg"])
+app.include_router(favorites.router, prefix="/api/favorites", tags=["favorites"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
-app.include_router(health.router, prefix="/api/health", tags=["health"])
-app.include_router(system.router, prefix="/api/system", tags=["system"])
-app.include_router(hdhr.router, tags=["hdhr"])  # No prefix - HDHomeRun endpoints at root
+app.include_router(hdhr.router, tags=["hdhr"])
 
 
-@app.get("/")
-async def root():
-    """Root endpoint."""
+@app.get("/api")
+async def api_root():
     return {
-        "app": settings.APP_NAME,
+        "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "status": "running"
+        "status": "running",
+        "docs": "/docs",
+        "api_version": "v1",
     }
 
 
-@app.get("/api/status")
-async def status():
-    """Get application status."""
-    return {
-        "status": "healthy",
-        "version": settings.APP_VERSION
-    }
+# Serve React frontend
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    """Serve the React frontend for all non-API routes."""
+    # Check if the path is a file request
+    if "." in full_path.split("/")[-1]:
+        file_path = Path("/app/frontend/dist") / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+    # Otherwise, serve index.html for client-side routing
+    return FileResponse("/app/frontend/dist/index.html")

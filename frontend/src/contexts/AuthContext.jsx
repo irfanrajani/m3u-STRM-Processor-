@@ -1,86 +1,63 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+const api = axios.create({
+  baseURL: '/api',
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [needsSetup, setNeedsSetup] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // You would typically verify the token with a '/api/users/me' endpoint
+      // For now, we'll assume the token is valid if it exists
+      setIsAuthenticated(true);
+      // setUser(decoded_user_data);
+    }
+    setIsLoading(false);
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      // Check if initial setup is needed
-      const setupCheck = await api.get('/api/auth/check');
-      setNeedsSetup(setupCheck.data.needs_setup);
-
-      // If we have a token, verify it
-      const token = localStorage.getItem('token');
-      if (token) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        const response = await api.get('/api/auth/me');
-        setUser(response.data);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const login = async (username, password) => {
-    const response = await api.post('/api/auth/login', { username, password });
-    const { access_token, user: userData } = response.data;
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', username);
+      formData.append('password', password);
 
-    localStorage.setItem('token', access_token);
-    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-    setUser(userData);
-    setNeedsSetup(false);
-
-    return userData;
-  };
-
-  const register = async (userData) => {
-    const response = await api.post('/api/auth/register', userData);
-
-    // After first user registration, log them in
-    if (needsSetup) {
-      await login(userData.username, userData.password);
+      const response = await api.post('/auth/token', formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+      
+      const { access_token } = response.data;
+      localStorage.setItem('accessToken', access_token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      setIsAuthenticated(true);
+      // You could fetch user data here and call setUser()
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
-
-    return response.data;
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
+    setIsAuthenticated(false);
   };
 
-  const value = {
-    user,
-    loading,
-    needsSetup,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin' || user?.is_superuser
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, api }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+export const useAuth = () => useContext(AuthContext);

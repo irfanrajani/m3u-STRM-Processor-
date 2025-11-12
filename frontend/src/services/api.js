@@ -1,4 +1,5 @@
 import axios from 'axios'
+import toast from 'react-hot-toast'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -8,6 +9,32 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Attach auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// Global error handling
+api.interceptors.response.use(
+  (resp) => resp,
+  (error) => {
+    const status = error?.response?.status
+    const message = error?.response?.data?.detail || error.message || 'Request failed'
+    if (status === 401) {
+      toast.error('Session expired. Please log in again.')
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    } else {
+      toast.error(message)
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Providers
 export const getProviders = () => api.get('/providers/')
@@ -43,5 +70,25 @@ export const getHealthStatus = () => api.get('/health/status')
 export const getSettings = () => api.get('/settings/')
 export const getSetting = (key) => api.get(`/settings/${key}`)
 export const updateSetting = (key, data) => api.put(`/settings/${key}`, data)
+
+// STRM Processing
+export const processSTRM = (data) => api.post('/strm/process-m3u/', data)
+
+// Favorites
+export const getFavorites = () => api.get('/favorites/')
+export const addFavorite = (data) => api.post('/favorites/', data)
+export const removeFavorite = (id) => api.delete(`/favorites/${id}`)
+export const removeFavoriteByChannel = (channelId) => api.delete(`/favorites/channel/${channelId}`)
+
+// Analytics
+export const getAnalyticsStats = () => api.get('/analytics/stats')
+export const getViewingHistory = (params) => api.get('/analytics/history', { params })
+export const getUserActivity = () => api.get('/analytics/user-activity')
+
+// System
+export const getSystemConfig = () => api.get('/system/config')
+export const updateSystemConfig = (data) => api.put('/system/config', data)
+export const getSystemStats = () => api.get('/system/stats')
+export const getSystemHealth = () => api.get('/system/health')
 
 export default api

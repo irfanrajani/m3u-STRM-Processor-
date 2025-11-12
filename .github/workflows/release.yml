@@ -12,8 +12,9 @@ on:
         default: 'v1.0.0'
 
 env:
-  # Fix: Use consistent image name without trailing dash
   IMAGE_NAME: iptv-stream-manager
+  REGISTRY: ghcr.io
+  FULL_IMAGE: ghcr.io/${{ github.repository_owner }}/iptv-stream-manager
 
 jobs:
   build-artifacts:
@@ -21,11 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+      packages: write
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set version
       id: version
       run: |
@@ -34,21 +35,27 @@ jobs:
         else
           echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
         fi
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
+
+    - name: Login to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-    
-    # Build frontend
+
     - name: Build frontend
       working-directory: ./frontend
       run: |
@@ -58,8 +65,7 @@ jobs:
           npm install
         fi
         npm run build
-    
-    # Create source archive
+
     - name: Create source archive
       run: |
         mkdir -p release
@@ -72,118 +78,107 @@ jobs:
           --exclude='dist' \
           --exclude='build' \
           .
-    
-    # Build Docker image and save
-    - name: Build Docker image
+
+    - name: Build & push multi-platform image
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
-        load: true
+        platforms: linux/amd64,linux/arm64
+        push: true
         tags: |
-          ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
-          ${{ env.IMAGE_NAME }}:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-    
-    - name: Save Docker image
+          ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
+          ${{ env.FULL_IMAGE }}:latest
+
+    - name: Save image locally (arm64)
       run: |
-        docker save ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} | \
-          gzip > release/${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-docker.tar.gz
-    
-    # Create frontend distribution
+        docker pull ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
+        docker save ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }} | gzip > release/${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-docker.tar.gz
+
     - name: Package frontend
       run: |
         cd frontend/dist
         tar -czf ../../release/${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-frontend.tar.gz .
-    
-    # Generate checksums
+
     - name: Generate checksums
       working-directory: ./release
-      run: |
-        sha256sum *.tar.gz > SHA256SUMS.txt
-    
-    # Create release notes
+      run: sha256sum *.tar.gz > SHA256SUMS.txt
+
     - name: Generate release notes
       run: |
         cat > release/RELEASE_NOTES.md << 'EOF'
         # IPTV Stream Manager ${{ steps.version.outputs.version }}
         
-        ## 📦 Downloads
-        
-        ### Docker Image (Recommended)
+        ## 📦 Pull Image (Recommended)
         ```bash
-        # Load the image
-        gunzip -c ${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-docker.tar.gz | docker load
-        
-        # Run the container
-        docker run -d -p 8000:8000 -p 3000:3000 \
+        docker pull ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
+        # Default port 8000 (serves API + Web UI)
+        docker run -d -p 8000:8000 \
           --name iptv-stream-manager \
           -e SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \
-          ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
         ```
         
-        ### Or pull from GitHub Container Registry
+        ## 🌐 Access
+        - Web UI: http://localhost:8000
+        - API Docs (Swagger): http://localhost:8000/docs
+        - Health: http://localhost:8000/api/health
+        
+        ## 🔄 Custom External Port Example (serve on :8080)
         ```bash
-        docker pull ghcr.io/${{ github.repository_owner }}/m3u-strm-processor:latest
+        docker run -d -p 8080:8000 --name iptv-stream-manager \
+          -e SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))') \
+          ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}
+        # UI + API: http://localhost:8080
         ```
         
-        ## 📋 What's Included
+        ## 🗂 Offline (Docker archive)
+        ```bash
+        gunzip -c ${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-docker.tar.gz | docker load
+        docker run -d -p 8000:8000 iptv-stream-manager:${{ steps.version.outputs.version }}
+        ```
         
-        - **Docker Image**: Complete application ready to run
-        - **Source Code**: Full source code archive
-        - **Frontend Build**: Pre-built frontend static files
-        
-        ## 🚀 Quick Start
-        
-        1. Download the Docker image file
-        2. Load it with the command above
-        3. Run the container
-        4. Access the application at http://localhost:3000
-        5. API available at http://localhost:8000
-        
-        ## 📖 Documentation
-        
-        See [README.md](https://github.com/${{ github.repository }}) for full documentation.
-        
-        ## ✅ Verification
-        
-        Verify downloads using SHA256SUMS.txt:
+        ## ✅ Verify
         ```bash
         sha256sum -c SHA256SUMS.txt
         ```
         EOF
-    
-    # Upload artifacts
+
     - name: Upload Docker image
       uses: actions/upload-artifact@v4
       with:
         name: docker-image-${{ steps.version.outputs.version }}
         path: release/${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-docker.tar.gz
         retention-days: 90
-    
+
     - name: Upload source archive
       uses: actions/upload-artifact@v4
       with:
         name: source-${{ steps.version.outputs.version }}
         path: release/${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-source.tar.gz
         retention-days: 90
-    
+
     - name: Upload frontend build
       uses: actions/upload-artifact@v4
       with:
         name: frontend-${{ steps.version.outputs.version }}
         path: release/${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-frontend.tar.gz
         retention-days: 90
-    
+
     - name: Upload checksums
       uses: actions/upload-artifact@v4
       with:
         name: checksums-${{ steps.version.outputs.version }}
         path: release/SHA256SUMS.txt
         retention-days: 90
-    
-    # Create GitHub Release
+
+    - name: Upload release notes
+      uses: actions/upload-artifact@v4
+      with:
+        name: notes-${{ steps.version.outputs.version }}
+        path: release/RELEASE_NOTES.md
+        retention-days: 90
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -197,19 +192,9 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Summary
       run: |
         echo "## 🎉 Release Build Complete" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📦 Artifacts Created:" >> $GITHUB_STEP_SUMMARY
-        echo "- Docker Image: \`${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-docker.tar.gz\`" >> $GITHUB_STEP_SUMMARY
-        echo "- Source Code: \`${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-source.tar.gz\`" >> $GITHUB_STEP_SUMMARY
-        echo "- Frontend Build: \`${{ env.IMAGE_NAME }}-${{ steps.version.outputs.version }}-frontend.tar.gz\`" >> $GITHUB_STEP_SUMMARY
-        echo "- Checksums: \`SHA256SUMS.txt\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📥 Download from:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Artifacts tab** above (available for 90 days)" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ github.event_name }}" = "push" ]; then
-          echo "- **Releases page**: https://github.com/${{ github.repository }}/releases" >> $GITHUB_STEP_SUMMARY
-        fi
+        echo "- Image pushed: ${{ env.FULL_IMAGE }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Multi-platform: amd64, arm64" >> $GITHUB_STEP_SUMMARY
