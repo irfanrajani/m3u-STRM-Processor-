@@ -40,7 +40,6 @@ DB_MAX_OVERFLOW=20
 DB_POOL_TIMEOUT=30
 DB_POOL_RECYCLE=3600
 DB_ECHO=false
-SECRET_KEY={generate_secret_key()}
 """)
 
 class Settings(BaseSettings):

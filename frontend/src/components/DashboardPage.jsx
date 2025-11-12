@@ -1,5 +1,6 @@
 import React from 'react';
 import { Typography, Paper, Grid, Box } from '@mui/material';
+import SystemStatusWidget from './SystemStatusWidget';
 
 function DashboardPage() {
   return (
@@ -25,6 +26,9 @@ function DashboardPage() {
             <Typography variant="h6">VOD Items</Typography>
             <Typography variant="h3">0</Typography>
           </Paper>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <SystemStatusWidget />
         </Grid>
       </Grid>
     </Box>

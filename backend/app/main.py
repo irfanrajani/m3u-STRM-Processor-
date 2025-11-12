@@ -49,7 +49,8 @@ async def lifespan(app: FastAPI):
     # Create default admin user if it doesn't exist
     from app.core.database import async_session
     from app.models.user import User
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    # Password hashing - using argon2 for modern security
+    pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
     
     async with async_session() as db:
         result = await db.execute(select(User).where(User.username == "admin"))

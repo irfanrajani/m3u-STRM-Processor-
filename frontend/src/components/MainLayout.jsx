@@ -17,6 +17,9 @@ import {
   Movie as MovieIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  VideoLibrary as VideoLibraryIcon,
+  FileDownload as FileDownloadIcon,
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -25,8 +28,11 @@ const drawerWidth = 240;
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Live TV', icon: <TvIcon />, path: '/live-tv' },
+  { text: 'STRM Processor', icon: <FileDownloadIcon />, path: '/strm-processor' },
+  { text: 'Providers', icon: <VideoLibraryIcon />, path: '/providers' },
+  { text: 'Channels', icon: <TvIcon />, path: '/channels' },
   { text: 'VOD', icon: <MovieIcon />, path: '/vod' },
+  { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

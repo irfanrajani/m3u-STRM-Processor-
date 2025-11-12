@@ -4,6 +4,12 @@ import { useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import MainLayout from './components/MainLayout';
 import DashboardPage from './pages/DashboardPage';
+import Providers from './pages/Providers';
+import Settings from './pages/Settings';
+import VOD from './pages/VOD';
+import Channels from './pages/Channels';
+import STRMProcessor from './pages/STRMProcessor';
+import Analytics from './pages/Analytics';
 import './App.css';
 
 function App() {
@@ -78,7 +84,12 @@ function App() {
             <MainLayout>
               <Routes>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                {/* Add other pages here later */}
+                <Route path="/strm-processor" element={<STRMProcessor />} />
+                <Route path="/providers" element={<Providers />} />
+                <Route path="/channels" element={<Channels />} />
+                <Route path="/vod" element={<VOD />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/settings" element={<Settings />} />
                 <Route path="/" element={<Navigate to="/dashboard" />} />
               </Routes>
             </MainLayout>
