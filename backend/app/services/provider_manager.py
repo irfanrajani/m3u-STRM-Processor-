@@ -176,7 +176,7 @@ class M3UProvider:
 
         for url in all_urls:
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                     response = await client.get(url)
                     response.raise_for_status()
                     return response.text

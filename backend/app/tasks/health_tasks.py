@@ -14,7 +14,18 @@ logger = logging.getLogger(__name__)
 def run_health_check():
     """Run health check on all active streams."""
     import asyncio
-    asyncio.run(_run_health_check_async())
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_run_health_check_async())
+    finally:
+        loop.close()
 
 
 async def _run_health_check_async():
@@ -132,7 +143,18 @@ async def _update_channel_stream_counts(db):
 def check_provider_streams(provider_id: int):
     """Run health check for a specific provider's streams."""
     import asyncio
-    asyncio.run(_check_provider_streams_async(provider_id))
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_check_provider_streams_async(provider_id))
+    finally:
+        loop.close()
 
 
 async def _check_provider_streams_async(provider_id: int):

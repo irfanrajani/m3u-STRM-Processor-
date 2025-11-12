@@ -16,7 +16,18 @@ logger = logging.getLogger(__name__)
 def sync_vod_content(provider_id: int):
     """Sync VOD content from a provider."""
     import asyncio
-    asyncio.run(_sync_vod_content_async(provider_id))
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_sync_vod_content_async(provider_id))
+    finally:
+        loop.close()
 
 
 async def _sync_vod_content_async(provider_id: int):
@@ -234,7 +245,18 @@ async def _sync_series(db, provider, xstream):
 def generate_strm_files():
     """Generate .strm files for all VOD content."""
     import asyncio
-    asyncio.run(_generate_strm_files_async())
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_generate_strm_files_async())
+    finally:
+        loop.close()
 
 
 async def _generate_strm_files_async():

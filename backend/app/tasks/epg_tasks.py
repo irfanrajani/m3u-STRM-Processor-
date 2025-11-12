@@ -14,7 +14,18 @@ logger = logging.getLogger(__name__)
 def refresh_epg(provider_id: int):
     """Refresh EPG for a specific provider."""
     import asyncio
-    asyncio.run(_refresh_epg_async(provider_id))
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_refresh_epg_async(provider_id))
+    finally:
+        loop.close()
 
 
 async def _refresh_epg_async(provider_id: int):
@@ -51,7 +62,18 @@ async def _refresh_epg_async(provider_id: int):
 def refresh_all_epg():
     """Refresh EPG for all providers with EPG URLs."""
     import asyncio
-    asyncio.run(_refresh_all_epg_async())
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_refresh_all_epg_async())
+    finally:
+        loop.close()
 
 
 async def _refresh_all_epg_async():

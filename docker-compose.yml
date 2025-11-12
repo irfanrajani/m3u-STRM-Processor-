@@ -31,6 +31,58 @@ services:
       retries: 3
       start_period: 40s
 
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: []
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--pool=solo"]
+    working_dir: /app/backend
+    environment:
+      - POSTGRES_USER=iptv_user
+      - POSTGRES_PASSWORD=iptv_secure_pass_change_me
+      - POSTGRES_DB=iptv_db
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DEBUG=false
+    volumes:
+      - app-data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: []
+    command: ["celery", "-A", "app.tasks.celery_app", "beat", "--loglevel=info"]
+    working_dir: /app/backend
+    environment:
+      - POSTGRES_USER=iptv_user
+      - POSTGRES_PASSWORD=iptv_secure_pass_change_me
+      - POSTGRES_DB=iptv_db
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DEBUG=false
+    volumes:
+      - app-data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   db:
     image: postgres:15-alpine
     environment:

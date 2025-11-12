@@ -20,6 +20,7 @@ import {
   VideoLibrary as VideoLibraryIcon,
   FileDownload as FileDownloadIcon,
   Analytics as AnalyticsIcon,
+  Favorite as FavoriteIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -32,6 +33,7 @@ const menuItems = [
   { text: 'Providers', icon: <VideoLibraryIcon />, path: '/providers' },
   { text: 'Channels', icon: <TvIcon />, path: '/channels' },
   { text: 'VOD', icon: <MovieIcon />, path: '/vod' },
+  { text: 'Favorites', icon: <FavoriteIcon />, path: '/favorites' },
   { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];

@@ -10,6 +10,7 @@ import VOD from './pages/VOD';
 import Channels from './pages/Channels';
 import STRMProcessor from './pages/STRMProcessor';
 import Analytics from './pages/Analytics';
+import Favorites from './pages/Favorites';
 import './App.css';
 
 function App() {
@@ -88,6 +89,7 @@ function App() {
                 <Route path="/providers" element={<Providers />} />
                 <Route path="/channels" element={<Channels />} />
                 <Route path="/vod" element={<VOD />} />
+                <Route path="/favorites" element={<Favorites />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/" element={<Navigate to="/dashboard" />} />

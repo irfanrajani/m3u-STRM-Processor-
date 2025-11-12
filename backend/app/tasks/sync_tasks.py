@@ -22,7 +22,25 @@ def sync_provider(provider_id: int):
         provider_id: Provider ID to sync
     """
     import asyncio
-    asyncio.run(_sync_provider_async(provider_id))
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_sync_provider_async(provider_id))
+        # Allow pending cleanup tasks to complete
+        loop.run_until_complete(asyncio.sleep(0.1))
+    finally:
+        # Shutdown async generators and close loop
+        try:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+        except:
+            pass
+        loop.close()
 
 
 async def _sync_provider_async(provider_id: int):
@@ -287,7 +305,18 @@ async def _find_or_create_channel(db, name, normalized_name, category, region, v
 def sync_all_providers():
     """Sync all enabled providers."""
     import asyncio
-    asyncio.run(_sync_all_providers_async())
+    import nest_asyncio
+    
+    # Allow nested event loops (required for Celery + async)
+    nest_asyncio.apply()
+    
+    # Create new event loop for this task
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_sync_all_providers_async())
+    finally:
+        loop.close()
 
 
 async def _sync_all_providers_async():

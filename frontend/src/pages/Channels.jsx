@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tv, Search, Filter, Grid3x3, List, Signal } from 'lucide-react';
 import { getChannels, getCategories } from '../services/api';
+import ChannelDetailModal from '../components/ChannelDetailModal';
 
 export default function Channels() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [enabledFilter, setEnabledFilter] = useState(null);
+  const [selectedChannel, setSelectedChannel] = useState(null);
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
@@ -142,7 +144,8 @@ export default function Channels() {
             return (
               <div
                 key={channel.id}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden group"
+                onClick={() => setSelectedChannel(channel)}
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden group cursor-pointer"
               >
                 {/* Channel Logo */}
                 <div className="relative h-32 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -240,7 +243,11 @@ export default function Channels() {
               {filteredChannels.map((channel) => {
                 const quality = getQualityBadge(channel.stream_count);
                 return (
-                  <tr key={channel.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={channel.id} 
+                    onClick={() => setSelectedChannel(channel)}
+                    className="hover:bg-gray-50 cursor-pointer"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {channel.logo_url ? (
@@ -297,6 +304,14 @@ export default function Channels() {
               : 'Add a provider and sync to get started'}
           </p>
         </div>
+      )}
+
+      {/* Channel Detail Modal */}
+      {selectedChannel && (
+        <ChannelDetailModal
+          channel={selectedChannel}
+          onClose={() => setSelectedChannel(null)}
+        />
       )}
     </div>
   );
