@@ -29,6 +29,7 @@ from app.api import (
     favorites,
     analytics,
     merge,
+    streams as streams_api,
 )
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -117,6 +118,7 @@ app.include_router(favorites.router, prefix="/api/favorites", tags=["favorites"]
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
+app.include_router(streams_api.router)
 app.include_router(hdhr.router, tags=["hdhr"])
 
 

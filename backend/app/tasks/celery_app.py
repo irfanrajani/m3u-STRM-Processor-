@@ -11,7 +11,8 @@ celery_app = Celery(
         "app.tasks.sync_tasks",
         "app.tasks.health_tasks",
         "app.tasks.vod_tasks",
-        "app.tasks.epg_tasks"
+        "app.tasks.epg_tasks",
+        "app.tasks.stream_tasks",
     ]
 )
 
@@ -41,5 +42,9 @@ celery_app.conf.beat_schedule = {
     "sync-providers-hourly": {
         "task": "app.tasks.sync_tasks.sync_all_providers",
         "schedule": crontab(minute=0),  # Every hour
+    },
+    "stream-idle-cleanup": {
+        "task": "app.tasks.stream_tasks.cleanup_idle_streams",
+        "schedule": crontab()  # Every minute
     },
 }

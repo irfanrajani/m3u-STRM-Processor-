@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.services.hdhr_emulator import HDHomeRunEmulator
 import httpx
+from app.services.stream_connection_manager import stream_manager
 import logging
 
 router = APIRouter()
@@ -99,8 +100,25 @@ async def stream_channel(channel_id: int, db: AsyncSession = Depends(get_db)):
             # Redirect to original stream
             return RedirectResponse(url=stream_url, status_code=302)
         else:
-            # Proxy mode - stream through server
-            return await _proxy_stream(stream_url)
+            # Shared-proxy mode - stream through server with connection sharing
+            proxy = await stream_manager.get_or_create_stream(stream_url, channel_id)
+
+            async def stream_generator():
+                try:
+                    async for chunk in proxy.read_chunks():
+                        yield chunk
+                finally:
+                    # allow cleanup; manager will prune if closed
+                    await stream_manager.release_stream(stream_url, channel_id)
+
+            return StreamingResponse(
+                stream_generator(),
+                media_type="video/mp2t",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive"
+                }
+            )
 
     except HTTPException:
         raise

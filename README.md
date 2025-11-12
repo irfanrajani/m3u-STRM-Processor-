@@ -40,10 +40,10 @@ docker-compose up -d
 - ✅ Auto-configure Redis connection
 - ✅ Create default admin user (admin/admin123)
 
-**Access the application:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000/docs
-- Settings: http://localhost:3000/settings
+**Access the application (Docker Compose):**
+- Web UI + API (served by backend): http://localhost:8000
+- API docs (OpenAPI): http://localhost:8000/docs
+- Settings page: http://localhost:8000/settings
 
 **⚠️ Change default password immediately at http://localhost:3000/settings**
 
@@ -173,27 +173,32 @@ output/
 
 ## 🛠️ Development
 
-### Requirements
+### Local Development (hot reload)
 
-- Python 3.9+
+Use the Vite dev server for the frontend (port 3000) and run the backend separately (port 8000):
+
+Requirements:
+- Python 3.11+
 - Node.js 18+
-- Yarn
 
-### Local Setup
-
+Backend (FastAPI):
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install frontend dependencies
-cd frontend
-yarn install
-yarn build
-cd ..
-
-# Run the application
-uvicorn api.main:app --reload --port 8080
+# From project root
+docker-compose up -d  # starts db, redis, backend on :8000
+# Or run locally if you prefer: uvicorn app.main:app --reload --port 8000
 ```
+
+Frontend (Vite):
+```bash
+cd frontend
+npm install
+npm run dev  # serves http://localhost:3000 and proxies /api to http://localhost:8000
+```
+
+Access during development:
+- Frontend (hot reload): http://localhost:3000
+- Backend API: http://localhost:8000
+- API docs: http://localhost:8000/docs
 
 ### Running Tests
 
