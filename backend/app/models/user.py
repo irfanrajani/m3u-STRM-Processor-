@@ -24,7 +24,7 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
 
     # Role-based access control
-    role = Column(Enum(UserRole), default=UserRole.VIEWER, nullable=False)
+    role = Column(Enum(UserRole, values_callable=lambda x: [e.value for e in x], name='userrole'), default=UserRole.VIEWER.value, nullable=False)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)  # Legacy field, kept for compatibility
 
