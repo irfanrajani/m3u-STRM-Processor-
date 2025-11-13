@@ -98,6 +98,54 @@ class StreamHealthChecker:
                     error=str(e)
                 )
 
+    async def check_stream_with_grace(
+        self,
+        stream_url: str,
+        grace_period_ms: int = 300,
+        grace_timeout_secs: int = 2,
+        method: str = "head"
+    ) -> HealthCheckResult:
+        """
+        Check stream health with grace period for transient failures.
+
+        This prevents false failovers during brief provider hiccups by waiting
+        a short period and retrying before marking the stream as dead.
+
+        Args:
+            stream_url: Stream URL to check
+            grace_period_ms: Milliseconds to wait before retry (default: 300ms)
+            grace_timeout_secs: Timeout for grace retry in seconds (default: 2s)
+            method: HTTP method to use ("head" or "get")
+
+        Returns:
+            HealthCheckResult from either initial check or grace retry
+        """
+        # Initial check
+        result = await self.check_stream(stream_url, method)
+
+        if result.is_alive:
+            return result
+
+        # Stream failed - wait grace period before retry
+        logger.debug(f"Stream failed initial check, waiting {grace_period_ms}ms grace period")
+        await asyncio.sleep(grace_period_ms / 1000)
+
+        # Retry with shorter timeout
+        try:
+            retry_result = await asyncio.wait_for(
+                self.check_stream(stream_url, method),
+                timeout=grace_timeout_secs
+            )
+
+            if retry_result.is_alive:
+                logger.info(f"Stream recovered during grace period: {stream_url}")
+
+            return retry_result
+
+        except asyncio.TimeoutError:
+            logger.debug(f"Grace period retry timed out for {stream_url}")
+            return result  # Return original failure result
+
     async def check_streams_batch(self, streams: List[Dict]) -> List[Dict]:
         """
         Check multiple streams concurrently.
