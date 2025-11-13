@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
+import FirstRunSetup from './pages/FirstRunSetup';
+import Integration from './pages/Integration';
 import MainLayout from './components/MainLayout';
 import DashboardPage from './pages/DashboardEnhanced';
 import Providers from './pages/Providers';
@@ -78,7 +80,11 @@ function App() {
 
   return (
     <Routes>
+      {/* Public routes */}
+      <Route path="/setup" element={<FirstRunSetup />} />
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Protected routes */}
       <Route
         path="/*"
         element={
@@ -94,6 +100,7 @@ function App() {
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/integration" element={<Integration />} />
                 <Route path="/" element={<Navigate to="/dashboard" />} />
               </Routes>
             </MainLayout>

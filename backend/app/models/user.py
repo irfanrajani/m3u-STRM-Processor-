@@ -27,6 +27,7 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.VIEWER, nullable=False)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)  # Legacy field, kept for compatibility
+    must_change_password = Column(Boolean, default=False)  # Force password change on next login
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -32,6 +32,8 @@ from app.api import (
     streams as streams_api,
     websocket,
     xtream,
+    setup,
+    integration,
 )
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -137,10 +139,13 @@ app.add_middleware(
 )
 
 # Routers
+# Setup router first (no auth required for initial setup)
+app.include_router(setup.router, prefix="/api/setup", tags=["setup"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(integration.router, prefix="/api/integration", tags=["integration"])
 app.include_router(providers.router, prefix="/api/providers", tags=["providers"])
 app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
