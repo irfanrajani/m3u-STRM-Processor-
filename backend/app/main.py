@@ -57,16 +57,16 @@ async def lifespan(app: FastAPI):
     
     # Create default admin user if it doesn't exist
     from app.core.database import async_session
-    from app.models.user import User
+    from app.models.user import User, UserRole
     import os
     # Password hashing - using argon2 for modern security
     pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-    
+
     # Get admin password from environment or use default (with warning)
     default_admin_password = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123")
     if default_admin_password == "admin123":
         logger.warning("⚠️  Using default admin password! Set DEFAULT_ADMIN_PASSWORD environment variable for production!")
-    
+
     async with async_session() as db:
         result = await db.execute(select(User).where(User.username == "admin"))
         admin = result.scalar_one_or_none()
@@ -75,6 +75,7 @@ async def lifespan(app: FastAPI):
                 username="admin",
                 email="admin@example.com",
                 hashed_password=pwd_context.hash(default_admin_password),
+                role='admin',  # Use string directly - model handles enum conversion
                 is_active=True,
                 is_superuser=True
             )

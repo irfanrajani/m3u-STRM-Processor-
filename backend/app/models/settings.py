@@ -1,5 +1,5 @@
 """Application settings database model."""
-from sqlalchemy import Column, Integer, String, Boolean, JSON, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -11,9 +11,9 @@ class AppSettings(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     key = Column(String(255), unique=True, nullable=False, index=True)
-    value = Column(JSON, nullable=True)
+    value = Column(Text, nullable=True)  # Text to match migration, can store JSON as string
     value_type = Column(String(50), nullable=True)  # 'string', 'integer', 'boolean', etc.
-    description = Column(String(500), nullable=True)
+    description = Column(Text, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

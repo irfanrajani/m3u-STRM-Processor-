@@ -1,7 +1,7 @@
 """Add merge metadata tracking
 
 Revision ID: 004_add_merge_metadata
-Revises: 003_add_value_type_to_app_settings
+Revises: 002
 Create Date: 2025-11-11 12:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '004_add_merge_metadata'
-down_revision = '003'
+down_revision = '002'
 branch_labels = None
 depends_on = None
 

@@ -40,6 +40,8 @@ class Provider(Base):
     active_channels = Column(Integer, default=0)
     total_vod_movies = Column(Integer, default=0)
     total_vod_series = Column(Integer, default=0)
+    status = Column(String(50), nullable=True)  # e.g., 'active', 'error', 'syncing'
+    status_message = Column(Text, nullable=True)  # Detailed status message
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

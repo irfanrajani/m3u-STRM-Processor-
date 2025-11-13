@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
       netcat-openbsd \
       dos2unix \
-      nginx \
+      \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
