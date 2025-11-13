@@ -7,6 +7,10 @@ from app.models.channel import ChannelStream
 
 router = APIRouter()
 
+@router.get("/")
+async def root_health():
+    """Simple root health endpoint for container healthcheck."""
+    return {"status": "ok"}
 
 @router.post("/check")
 async def trigger_health_check():

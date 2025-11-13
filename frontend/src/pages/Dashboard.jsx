@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tantml:react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Activity, Tv, Radio, Server, TrendingUp, Users, HardDrive, AlertCircle, CheckCircle, Zap, RefreshCw } from 'lucide-react';
-import axios from 'axios';
-import { syncAllProviders, generateSTRM, triggerHealthCheck } from '../services/api';
-
-const API_BASE_URL = 'http://localhost:8000/api';
+import api, { syncAllProviders, generateSTRM, triggerHealthCheck } from '../services/api';
 
 export default function Dashboard() {
   const [refreshInterval, setRefreshInterval] = useState(5000); // 5 seconds
@@ -13,7 +10,7 @@ export default function Dashboard() {
   const { data: realtimeStats, isLoading, refetch } = useQuery({
     queryKey: ['realtimeStats'],
     queryFn: async () => {
-      const response = await axios.get(`${API_BASE_URL}/system/stats/realtime`);
+      const response = await api.get('/system/stats/realtime');
       return response.data;
     },
     refetchInterval: refreshInterval,

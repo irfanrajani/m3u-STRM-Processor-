@@ -206,29 +206,22 @@ async def get_realtime_stats(db: AsyncSession = Depends(get_db)) -> Dict[str, An
         )
     )
     
-    # Calculate bandwidth savings
+    # Calculate bandwidth savings (simplified - actual values would need tracking)
     bandwidth_saved_percentage = 0
-    if stream_stats['total_clients_served'] > 0:
-        potential_bandwidth = stream_stats['total_bandwidth_mb'] * stream_stats['total_clients_served']
-        actual_bandwidth = stream_stats['total_bandwidth_mb']
-        if potential_bandwidth > 0:
-            bandwidth_saved_percentage = round(
-                ((potential_bandwidth - actual_bandwidth) / potential_bandwidth) * 100,
-                1
-            )
+    bandwidth_saved_mb = 0
     
     return {
         # Streaming stats
         "streaming": {
-            "active_streams": stream_stats['active_streams'],
-            "active_clients": stream_stats['active_clients'],
-            "total_bandwidth_mb": stream_stats['total_bandwidth_mb'],
-            "bandwidth_saved_mb": stream_stats['bandwidth_saved_mb'],
+            "active_streams": stream_stats.get('active_streams', 0),
+            "active_clients": stream_stats.get('total_clients', 0),
+            "total_bandwidth_mb": 0,  # Would need bandwidth tracking
+            "bandwidth_saved_mb": bandwidth_saved_mb,
             "bandwidth_saved_percentage": bandwidth_saved_percentage,
-            "total_streams_created": stream_stats['total_streams_created'],
-            "total_clients_served": stream_stats['total_clients_served'],
-            "peak_concurrent_streams": stream_stats['peak_concurrent_streams'],
-            "streams": stream_stats['streams']
+            "total_streams_created": 0,  # Would need historical tracking
+            "total_clients_served": stream_stats.get('total_clients', 0),
+            "peak_concurrent_streams": stream_stats.get('active_streams', 0),
+            "streams": stream_stats.get('streams', [])
         },
         
         # Channel stats

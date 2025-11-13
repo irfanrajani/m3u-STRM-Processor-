@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings as SettingsIcon, Save, RefreshCw, AlertCircle, Sliders } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use shared api client (handles auth, errors, proxy) avoiding CORS issues.
 
 export default function Settings() {
   const [localSettings, setLocalSettings] = useState({});
@@ -14,7 +14,7 @@ export default function Settings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
     queryFn: async () => {
-      const response = await axios.get(`${API_URL}/api/settings/`);
+      const response = await api.get('/settings/');
       const settingsMap = {};
       response.data.forEach(setting => {
         settingsMap[setting.key] = setting;
@@ -32,7 +32,7 @@ export default function Settings() {
       Object.keys(settingsToSave).forEach(key => {
         payload[key] = settingsToSave[key].value;
       });
-      await axios.post(`${API_URL}/api/settings/bulk-update`, { settings: payload });
+      await api.post('/settings/bulk-update', { settings: payload });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['settings']);

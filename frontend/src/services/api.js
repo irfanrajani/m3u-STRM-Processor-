@@ -1,6 +1,7 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
+// Base API path; dev server proxies '/api' to backend. Prefer relative to avoid CORS.
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const api = axios.create({
@@ -12,7 +13,7 @@ const api = axios.create({
 
 // Attach auth token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('accessToken')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -27,7 +28,7 @@ api.interceptors.response.use(
     const message = error?.response?.data?.detail || error.message || 'Request failed'
     if (status === 401) {
       toast.error('Session expired. Please log in again.')
-      localStorage.removeItem('token')
+      localStorage.removeItem('accessToken')
       window.location.href = '/login'
     } else {
       toast.error(message)

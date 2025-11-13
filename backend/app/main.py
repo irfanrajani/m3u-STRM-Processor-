@@ -117,6 +117,8 @@ app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
 app.include_router(epg.router, prefix="/api/epg", tags=["epg"])
 app.include_router(favorites.router, prefix="/api/favorites", tags=["favorites"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
+"""Temporary compatibility for frontend calling /api/api/analytics/... will be removed once UI fixed."""
+app.include_router(analytics.router, prefix="/api/api/analytics", tags=["analytics-legacy"])
 app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(streams_api.router)

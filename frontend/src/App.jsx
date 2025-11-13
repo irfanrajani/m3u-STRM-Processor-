@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import MainLayout from './components/MainLayout';
-import DashboardPage from './pages/DashboardPage';
+import Dashboard from './pages/Dashboard';
 import Providers from './pages/Providers';
 import Settings from './pages/Settings';
 import VOD from './pages/VOD';
@@ -85,7 +85,7 @@ function App() {
           <PrivateRoute>
             <MainLayout>
               <Routes>
-                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/strm-processor" element={<STRMProcessor />} />
                 <Route path="/providers" element={<Providers />} />
                 <Route path="/channels" element={<ChannelsNew />} />

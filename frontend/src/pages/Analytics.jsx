@@ -12,7 +12,7 @@ export default function Analytics() {
   const { data: userStats } = useQuery({
     queryKey: ['analytics', 'userStats', dayRange],
     queryFn: async () => {
-      const response = await api.get(`/api/analytics/stats?days=${dayRange}`)
+      const response = await api.get(`/analytics/stats`, { params: { days: dayRange } })
       return response.data
     }
   })
@@ -21,7 +21,7 @@ export default function Analytics() {
   const { data: popularChannels } = useQuery({
     queryKey: ['analytics', 'popular', dayRange],
     queryFn: async () => {
-      const response = await api.get(`/api/analytics/popular?days=${dayRange}`)
+      const response = await api.get(`/analytics/popular`, { params: { days: dayRange } })
       return response.data
     }
   })
@@ -30,7 +30,7 @@ export default function Analytics() {
   const { data: systemStats } = useQuery({
     queryKey: ['analytics', 'system'],
     queryFn: async () => {
-      const response = await api.get('/api/analytics/admin/stats')
+      const response = await api.get('/analytics/admin/stats')
       return response.data
     },
     enabled: isAdmin
@@ -40,7 +40,7 @@ export default function Analytics() {
   const { data: history } = useQuery({
     queryKey: ['analytics', 'history'],
     queryFn: async () => {
-      const response = await api.get('/api/analytics/history?limit=20')
+      const response = await api.get('/analytics/history', { params: { limit: 20 } })
       return response.data
     }
   })
