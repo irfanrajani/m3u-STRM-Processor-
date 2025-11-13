@@ -31,6 +31,7 @@ from app.api import (
     merge,
     streams as streams_api,
     websocket,
+    xtream,
 )
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -122,6 +123,7 @@ app.include_router(settings_router.router, prefix="/api/settings", tags=["settin
 app.include_router(streams_api.router)
 app.include_router(hdhr.router, tags=["hdhr"])
 app.include_router(websocket.router, prefix="/api", tags=["websocket"])
+app.include_router(xtream.router, tags=["xtream"])
 
 
 @app.get("/api")
