@@ -15,6 +15,9 @@ if config.config_file_name:
 from app.core.database import Base
 from app.core.config import settings
 
+# Import all models so they are registered with Base.metadata
+import app.models  # noqa
+
 target_metadata = Base.metadata
 
 
