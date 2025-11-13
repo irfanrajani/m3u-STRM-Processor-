@@ -30,6 +30,7 @@ from app.api import (
     analytics,
     merge,
     streams as streams_api,
+    websocket,
 )
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -120,6 +121,7 @@ app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(streams_api.router)
 app.include_router(hdhr.router, tags=["hdhr"])
+app.include_router(websocket.router, prefix="/api", tags=["websocket"])
 
 
 @app.get("/api")
