@@ -87,7 +87,36 @@ async def lifespan(app: FastAPI):
                 logger.warning("⚠️  SECURITY: Change admin password immediately after first login!")
         else:
             logger.info("Admin user already exists")
-    
+
+    # Configure notifications from database settings
+    try:
+        from app.api.settings import configure_notifications
+        async with async_session() as db:
+            # Get admin user for authentication context
+            result = await db.execute(select(User).where(User.username == "admin"))
+            admin = result.scalar_one_or_none()
+            if admin:
+                config_result = await configure_notifications(db, admin)
+                logger.info(f"✅ Notifications configured: {config_result['configured_channels']} channel(s)")
+    except Exception as e:
+        logger.warning(f"Failed to configure notifications on startup: {e}")
+
+    # Configure bandwidth throttling from database settings
+    try:
+        from app.api.settings import configure_bandwidth
+        async with async_session() as db:
+            # Get admin user for authentication context
+            result = await db.execute(select(User).where(User.username == "admin"))
+            admin = result.scalar_one_or_none()
+            if admin:
+                config_result = await configure_bandwidth(db, admin)
+                if config_result['enabled']:
+                    logger.info(f"✅ Bandwidth throttling configured: {config_result['limit_mbps']} Mbps")
+                else:
+                    logger.info("ℹ️  Bandwidth throttling disabled")
+    except Exception as e:
+        logger.warning(f"Failed to configure bandwidth on startup: {e}")
+
     yield
     logger.info("Shutting down...")
     await close_db()

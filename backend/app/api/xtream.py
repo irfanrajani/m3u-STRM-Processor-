@@ -3,6 +3,7 @@ import logging
 from typing import Optional, List
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.core.database import get_db
@@ -10,6 +11,7 @@ from app.models.channel import Channel, ChannelStream
 from app.models.vod import VODMovie, VODSeries, VODEpisode
 from app.models.provider import Provider
 from app.core.config import settings
+from app.services.xmltv_generator import XMLTVGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -468,16 +470,31 @@ async def get_epg(
     """
     Return EPG in XMLTV format.
 
-    TODO: Implement full EPG export from database.
+    Generates complete EPG guide from database with 7-day window.
+    Compatible with TiviMate, IPTV Smarters, and other Xtream clients.
     """
     # Simple auth check
     if not username or not password:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    # Return minimal XMLTV structure
-    xmltv = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE tv SYSTEM "xmltv.dtd">
-<tv generator-info-name="IPTV Stream Manager">
-</tv>"""
+    try:
+        # Generate XMLTV from database
+        generator = XMLTVGenerator(db)
+        xmltv_content = await generator.generate_xmltv()
 
-    return {"content": xmltv, "content_type": "application/xml"}
+        # Return as XML response
+        return Response(
+            content=xmltv_content,
+            media_type="application/xml",
+            headers={
+                "Content-Disposition": "inline; filename=epg.xml",
+                "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate XMLTV: {e}", exc_info=True)
+        # Return minimal structure on error
+        xmltv = """<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="M3U STRM Processor">
+</tv>"""
+        return Response(content=xmltv, media_type="application/xml")
