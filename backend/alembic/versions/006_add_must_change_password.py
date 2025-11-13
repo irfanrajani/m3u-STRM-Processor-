@@ -17,17 +17,29 @@ depends_on = None
 
 
 def upgrade() -> None:
-    """Add must_change_password field to users table."""
-    op.add_column(
-        'users',
-        sa.Column('must_change_password', sa.Boolean(), nullable=True, server_default='false')
-    )
+    """Add must_change_password field to users table (idempotent)."""
+    from sqlalchemy import inspect
+    conn = op.get_bind()
+    inspector = inspect(conn)
 
-    # Set default value for existing users
-    op.execute("UPDATE users SET must_change_password = false WHERE must_change_password IS NULL")
+    # Check if users table exists
+    tables = inspector.get_table_names()
+    if 'users' not in tables:
+        return  # Skip if users table doesn't exist yet
 
-    # Make column not nullable after setting defaults
-    op.alter_column('users', 'must_change_password', nullable=False)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+
+    if 'must_change_password' not in columns:
+        op.add_column(
+            'users',
+            sa.Column('must_change_password', sa.Boolean(), nullable=True, server_default='false')
+        )
+
+        # Set default value for existing users
+        op.execute("UPDATE users SET must_change_password = false WHERE must_change_password IS NULL")
+
+        # Make column not nullable after setting defaults
+        op.alter_column('users', 'must_change_password', nullable=False)
 
 
 def downgrade() -> None:
