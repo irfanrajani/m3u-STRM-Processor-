@@ -47,10 +47,6 @@ else
   fi
 fi
 
-# Start Nginx for frontend
-echo "🌐 Starting Nginx on port 3001 for frontend..."
-nginx -g 'daemon off;' &
-
 # Start the application
 echo "✅ Launching Uvicorn on port ${BACKEND_PORT:-8000}"
 exec uvicorn app.main:app --host 0.0.0.0 --port ${BACKEND_PORT:-8000}

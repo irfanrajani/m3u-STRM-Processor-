@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI):
                 username="admin",
                 email="admin@example.com",
                 hashed_password=pwd_context.hash(default_admin_password),
-                role=UserRole.ADMIN,
+                role=UserRole.ADMIN.value,  # Use .value to send "admin" string, not enum name
                 is_active=True,
                 is_superuser=True
             )
