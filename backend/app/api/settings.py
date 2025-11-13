@@ -229,6 +229,79 @@ DEFAULT_SETTINGS = {
         "type": "int",
         "description": "Cache time-to-live in seconds"
     },
+
+    # Notifications - Telegram
+    "notification_telegram_enabled": {
+        "value": False,
+        "type": "bool",
+        "description": "Enable Telegram notifications"
+    },
+    "notification_telegram_bot_token": {
+        "value": "",
+        "type": "string",
+        "description": "Telegram bot token from @BotFather"
+    },
+    "notification_telegram_chat_id": {
+        "value": "",
+        "type": "string",
+        "description": "Telegram chat ID to send notifications to"
+    },
+    "notification_telegram_min_level": {
+        "value": "INFO",
+        "type": "string",
+        "description": "Minimum notification level for Telegram: DEBUG, INFO, WARNING, ERROR"
+    },
+
+    # Notifications - Pushover
+    "notification_pushover_enabled": {
+        "value": False,
+        "type": "bool",
+        "description": "Enable Pushover notifications"
+    },
+    "notification_pushover_user_key": {
+        "value": "",
+        "type": "string",
+        "description": "Pushover user key"
+    },
+    "notification_pushover_api_token": {
+        "value": "",
+        "type": "string",
+        "description": "Pushover application API token"
+    },
+    "notification_pushover_min_level": {
+        "value": "WARNING",
+        "type": "string",
+        "description": "Minimum notification level for Pushover: DEBUG, INFO, WARNING, ERROR"
+    },
+
+    # Notifications - Webhook
+    "notification_webhook_enabled": {
+        "value": False,
+        "type": "bool",
+        "description": "Enable webhook notifications"
+    },
+    "notification_webhook_url": {
+        "value": "",
+        "type": "string",
+        "description": "Webhook URL to POST notifications to"
+    },
+    "notification_webhook_min_level": {
+        "value": "ERROR",
+        "type": "string",
+        "description": "Minimum notification level for webhooks: DEBUG, INFO, WARNING, ERROR"
+    },
+
+    # Bandwidth Throttling
+    "bandwidth_throttling_enabled": {
+        "value": False,
+        "type": "bool",
+        "description": "Enable global bandwidth throttling"
+    },
+    "bandwidth_global_limit_mbps": {
+        "value": 100.0,
+        "type": "float",
+        "description": "Global bandwidth limit in Mbps (0 = unlimited)"
+    },
 }
 
 
@@ -461,5 +534,234 @@ async def get_settings_categories(
             "db_max_overflow",
             "enable_caching",
             "cache_ttl"
+        ],
+        "Notifications - Telegram": [
+            "notification_telegram_enabled",
+            "notification_telegram_bot_token",
+            "notification_telegram_chat_id",
+            "notification_telegram_min_level"
+        ],
+        "Notifications - Pushover": [
+            "notification_pushover_enabled",
+            "notification_pushover_user_key",
+            "notification_pushover_api_token",
+            "notification_pushover_min_level"
+        ],
+        "Notifications - Webhook": [
+            "notification_webhook_enabled",
+            "notification_webhook_url",
+            "notification_webhook_min_level"
+        ],
+        "Bandwidth": [
+            "bandwidth_throttling_enabled",
+            "bandwidth_global_limit_mbps"
         ]
+    }
+
+
+@router.post("/notifications/configure")
+async def configure_notifications(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Configure notification system from saved settings.
+
+    Reads all notification_* settings from database and configures
+    the notification_manager accordingly. Should be called on startup
+    and after notification settings are changed.
+    """
+    from app.services.notification_manager import notification_manager
+
+    configured_channels = 0
+
+    # Get all notification settings
+    result = await db.execute(
+        select(AppSettings).where(AppSettings.key.like('notification_%'))
+    )
+    settings_list = result.scalars().all()
+
+    # Convert to dict
+    settings = {}
+    for setting in settings_list:
+        try:
+            settings[setting.key] = json.loads(setting.value)
+        except (json.JSONDecodeError, TypeError):
+            settings[setting.key] = setting.value
+
+    # Configure Telegram
+    if settings.get('notification_telegram_enabled', False):
+        bot_token = settings.get('notification_telegram_bot_token', '')
+        chat_id = settings.get('notification_telegram_chat_id', '')
+        min_level = settings.get('notification_telegram_min_level', 'INFO')
+
+        if bot_token and chat_id:
+            try:
+                notification_manager.configure_telegram(
+                    bot_token=bot_token,
+                    chat_id=chat_id,
+                    min_level=min_level
+                )
+                configured_channels += 1
+                logger.info(f"Configured Telegram notifications (min_level={min_level})")
+            except Exception as e:
+                logger.error(f"Failed to configure Telegram: {e}")
+
+    # Configure Pushover
+    if settings.get('notification_pushover_enabled', False):
+        user_key = settings.get('notification_pushover_user_key', '')
+        api_token = settings.get('notification_pushover_api_token', '')
+        min_level = settings.get('notification_pushover_min_level', 'WARNING')
+
+        if user_key and api_token:
+            try:
+                notification_manager.configure_pushover(
+                    user_key=user_key,
+                    api_token=api_token,
+                    min_level=min_level
+                )
+                configured_channels += 1
+                logger.info(f"Configured Pushover notifications (min_level={min_level})")
+            except Exception as e:
+                logger.error(f"Failed to configure Pushover: {e}")
+
+    # Configure Webhook
+    if settings.get('notification_webhook_enabled', False):
+        webhook_url = settings.get('notification_webhook_url', '')
+        min_level = settings.get('notification_webhook_min_level', 'ERROR')
+
+        if webhook_url:
+            try:
+                notification_manager.configure_webhook(
+                    webhook_url=webhook_url,
+                    min_level=min_level
+                )
+                configured_channels += 1
+                logger.info(f"Configured Webhook notifications (min_level={min_level})")
+            except Exception as e:
+                logger.error(f"Failed to configure Webhook: {e}")
+
+    return {
+        "status": "success",
+        "configured_channels": configured_channels,
+        "message": f"Configured {configured_channels} notification channel(s)"
+    }
+
+
+@router.post("/notifications/test/{channel}")
+async def test_notification(
+    channel: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Send a test notification to verify configuration.
+
+    Args:
+        channel: 'telegram', 'pushover', or 'webhook'
+    """
+    from app.services.notification_manager import notification_manager
+
+    # First ensure notifications are configured
+    await configure_notifications(db, current_user)
+
+    # Send test notification
+    try:
+        if channel == 'telegram':
+            await notification_manager.send_telegram("Test notification from M3U STRM Processor!")
+            return {"status": "success", "message": "Test notification sent to Telegram"}
+        elif channel == 'pushover':
+            await notification_manager.send_pushover(
+                "Test notification from M3U STRM Processor!",
+                title="Test Notification"
+            )
+            return {"status": "success", "message": "Test notification sent to Pushover"}
+        elif channel == 'webhook':
+            await notification_manager.send_webhook({
+                "event": "test",
+                "message": "Test notification from M3U STRM Processor!",
+                "level": "INFO"
+            })
+            return {"status": "success", "message": "Test notification sent to webhook"}
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown channel: {channel}")
+    except Exception as e:
+        logger.error(f"Failed to send test notification to {channel}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to send test notification: {str(e)}"
+        )
+
+
+@router.post("/bandwidth/configure")
+async def configure_bandwidth(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Configure bandwidth throttling from saved settings.
+
+    Reads bandwidth_* settings from database and configures
+    the bandwidth_limiter accordingly.
+    """
+    from app.services.bandwidth_limiter import bandwidth_limiter
+
+    # Get bandwidth settings
+    result = await db.execute(
+        select(AppSettings).where(AppSettings.key.like('bandwidth_%'))
+    )
+    settings_list = result.scalars().all()
+
+    # Convert to dict
+    settings = {}
+    for setting in settings_list:
+        try:
+            settings[setting.key] = json.loads(setting.value)
+        except (json.JSONDecodeError, TypeError):
+            settings[setting.key] = setting.value
+
+    enabled = settings.get('bandwidth_throttling_enabled', False)
+    limit_mbps = settings.get('bandwidth_global_limit_mbps', 100.0)
+
+    if enabled and limit_mbps > 0:
+        try:
+            bandwidth_limiter.set_global_limit(limit_mbps)
+            logger.info(f"Configured bandwidth throttling: {limit_mbps} Mbps")
+            return {
+                "status": "success",
+                "enabled": True,
+                "limit_mbps": limit_mbps,
+                "message": f"Bandwidth throttling enabled at {limit_mbps} Mbps"
+            }
+        except Exception as e:
+            logger.error(f"Failed to configure bandwidth throttling: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to configure bandwidth: {str(e)}"
+            )
+    else:
+        bandwidth_limiter.set_global_limit(0)  # Disable throttling
+        logger.info("Bandwidth throttling disabled")
+        return {
+            "status": "success",
+            "enabled": False,
+            "limit_mbps": 0,
+            "message": "Bandwidth throttling disabled"
+        }
+
+
+@router.get("/bandwidth/stats")
+async def get_bandwidth_stats(
+    current_user: User = Depends(get_current_user)
+):
+    """Get current bandwidth usage statistics."""
+    from app.services.bandwidth_limiter import bandwidth_limiter
+
+    stats = bandwidth_limiter.get_stats()
+    return {
+        "global_limit_mbps": stats.get("global_limit_mbps", 0),
+        "current_usage_mbps": stats.get("current_usage_mbps", 0),
+        "active_streams": stats.get("active_streams", 0),
+        "total_bytes_transferred": stats.get("total_bytes_transferred", 0),
+        "throttling_enabled": stats.get("global_limit_mbps", 0) > 0
     }

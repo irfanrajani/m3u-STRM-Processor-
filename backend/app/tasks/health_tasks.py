@@ -64,6 +64,13 @@ async def _run_health_check_async():
 
                 results = await checker.check_streams_batch(batch)
 
+                # Create a dictionary of streams for O(1) lookup (fixes N+1 query)
+                batch_stream_ids = [item['id'] for item in batch]
+                stream_result = await db.execute(
+                    select(ChannelStream).where(ChannelStream.id.in_(batch_stream_ids))
+                )
+                streams_dict = {stream.id: stream for stream in stream_result.scalars().all()}
+
                 # Update database with results
                 for result in results:
                     stream_id = result['stream_id']
@@ -71,11 +78,8 @@ async def _run_health_check_async():
                     response_time = result['response_time']
                     error = result['error']
 
-                    # Find stream
-                    stream_result = await db.execute(
-                        select(ChannelStream).where(ChannelStream.id == stream_id)
-                    )
-                    stream = stream_result.scalar_one_or_none()
+                    # O(1) lookup instead of database query
+                    stream = streams_dict.get(stream_id)
 
                     if stream:
                         stream.last_check = datetime.utcnow()
@@ -201,6 +205,13 @@ async def _check_provider_streams_async(provider_id: int):
             # Run health checks
             results = await checker.check_streams_batch(stream_data)
 
+            # Create a dictionary of streams for O(1) lookup (fixes N+1 query)
+            stream_ids = [item['id'] for item in stream_data]
+            stream_result = await db.execute(
+                select(ChannelStream).where(ChannelStream.id.in_(stream_ids))
+            )
+            streams_dict = {stream.id: stream for stream in stream_result.scalars().all()}
+
             # Update database
             for result in results:
                 stream_id = result['stream_id']
@@ -208,10 +219,8 @@ async def _check_provider_streams_async(provider_id: int):
                 response_time = result['response_time']
                 error = result['error']
 
-                stream_result = await db.execute(
-                    select(ChannelStream).where(ChannelStream.id == stream_id)
-                )
-                stream = stream_result.scalar_one_or_none()
+                # O(1) lookup instead of database query
+                stream = streams_dict.get(stream_id)
 
                 if stream:
                     stream.last_check = datetime.utcnow()

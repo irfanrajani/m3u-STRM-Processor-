@@ -30,6 +30,10 @@ from app.api import (
     analytics,
     merge,
     streams as streams_api,
+    websocket,
+    xtream,
+    setup,
+    integration,
 )
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -85,7 +89,36 @@ async def lifespan(app: FastAPI):
                 logger.warning("⚠️  SECURITY: Change admin password immediately after first login!")
         else:
             logger.info("Admin user already exists")
-    
+
+    # Configure notifications from database settings
+    try:
+        from app.api.settings import configure_notifications
+        async with async_session() as db:
+            # Get admin user for authentication context
+            result = await db.execute(select(User).where(User.username == "admin"))
+            admin = result.scalar_one_or_none()
+            if admin:
+                config_result = await configure_notifications(db, admin)
+                logger.info(f"✅ Notifications configured: {config_result['configured_channels']} channel(s)")
+    except Exception as e:
+        logger.warning(f"Failed to configure notifications on startup: {e}")
+
+    # Configure bandwidth throttling from database settings
+    try:
+        from app.api.settings import configure_bandwidth
+        async with async_session() as db:
+            # Get admin user for authentication context
+            result = await db.execute(select(User).where(User.username == "admin"))
+            admin = result.scalar_one_or_none()
+            if admin:
+                config_result = await configure_bandwidth(db, admin)
+                if config_result['enabled']:
+                    logger.info(f"✅ Bandwidth throttling configured: {config_result['limit_mbps']} Mbps")
+                else:
+                    logger.info("ℹ️  Bandwidth throttling disabled")
+    except Exception as e:
+        logger.warning(f"Failed to configure bandwidth on startup: {e}")
+
     yield
     logger.info("Shutting down...")
     await close_db()
@@ -106,10 +139,13 @@ app.add_middleware(
 )
 
 # Routers
+# Setup router first (no auth required for initial setup)
+app.include_router(setup.router, prefix="/api/setup", tags=["setup"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(integration.router, prefix="/api/integration", tags=["integration"])
 app.include_router(providers.router, prefix="/api/providers", tags=["providers"])
 app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(vod.router, prefix="/api/vod", tags=["vod"])
@@ -120,6 +156,8 @@ app.include_router(merge.router, prefix="/api", tags=["merge"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
 app.include_router(streams_api.router)
 app.include_router(hdhr.router, tags=["hdhr"])
+app.include_router(websocket.router, prefix="/api", tags=["websocket"])
+app.include_router(xtream.router, tags=["xtream"])
 
 
 @app.get("/api")

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pydantic import BaseModel
 from app.core.database import get_db
+from app.core.cache import CacheManager
 from app.models.channel import Channel, ChannelStream
 from app.models.provider import Provider
 from app.services.health_checker import StreamHealthChecker
@@ -141,13 +142,22 @@ async def get_channel_streams(channel_id: int, db: AsyncSession = Depends(get_db
 
 @router.get("/categories/list")
 async def list_categories(db: AsyncSession = Depends(get_db)):
-    """Get list of all channel categories."""
+    """Get list of all channel categories with caching."""
+    # Try cache first
+    cached = CacheManager.get("cache:channels:categories")
+    if cached is not None:
+        return cached
+
+    # Cache miss - fetch from database
     result = await db.execute(
         select(Channel.category, func.count(Channel.id))
         .group_by(Channel.category)
         .order_by(Channel.category)
     )
     categories = [{"name": cat, "count": count} for cat, count in result.all() if cat]
+
+    # Cache for 1 hour (3600 seconds)
+    CacheManager.set("cache:channels:categories", categories, ttl=3600)
 
     return categories
 

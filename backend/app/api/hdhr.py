@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.config import settings
 from app.services.hdhr_emulator import HDHomeRunEmulator
+from app.services.xmltv_generator import XMLTVGenerator
 import httpx
 from app.services.stream_connection_manager import stream_manager
 import logging
@@ -76,6 +77,37 @@ async def device_xml(request: Request):
     base_url = get_base_url(request)
     xml_content = hdhr.get_device_xml(base_url)
     return Response(content=xml_content, media_type="application/xml")
+
+
+@router.get("/epg.xml")
+async def epg_xml(db: AsyncSession = Depends(get_db)):
+    """
+    EPG/XMLTV endpoint for HDHomeRun compatibility.
+
+    Provides electronic program guide data in XMLTV format.
+    Compatible with Plex Live TV, Emby Live TV, and Channels DVR.
+    """
+    try:
+        # Generate XMLTV from database
+        generator = XMLTVGenerator(db)
+        xmltv_content = await generator.generate_xmltv()
+
+        # Return as XML response with HDHR-specific headers
+        return Response(
+            content=xmltv_content,
+            media_type="application/xml",
+            headers={
+                "Content-Disposition": "inline; filename=epg.xml",
+                "Cache-Control": "public, max-age=1800"  # Cache for 30 minutes
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate XMLTV for HDHR: {e}", exc_info=True)
+        # Return minimal structure on error
+        xmltv = """<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="M3U STRM Processor">
+</tv>"""
+        return Response(content=xmltv, media_type="application/xml")
 
 
 @router.get("/auto/v{channel_id}")
